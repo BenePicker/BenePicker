@@ -1,0 +1,44 @@
+# ============================================================
+# 이 파일을 복사해서 config.properties 로 만든 뒤 실제 값을 채우세요.
+# config.properties는 .gitignore에 포함되어 있으므로 절대 커밋하지 마세요.
+# ============================================================
+
+# Oracle DB 연결 정보
+spring.datasource.hikari.driver-class-name=oracle.jdbc.driver.OracleDriver
+spring.datasource.hikari.jdbc-url=jdbc:oracle:thin:@localhost:1521:XE
+spring.datasource.hikari.username=your_db_username
+spring.datasource.hikari.password=your_db_password
+
+# HikariCP 설정
+spring.datasource.hikari.connection-timeout=30000
+spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.idle-timeout=600000
+spring.datasource.hikari.pool-name=BenePickerHikariCP
+spring.datasource.hikari.auto-commit=false
+
+# ============================================================
+# 이메일 설정 (Gmail 기준)
+# ============================================================
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_email@gmail.com
+spring.mail.password=your_app_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.connectiontimeout=10000
+spring.mail.properties.mail.smtp.timeout=10000
+spring.mail.properties.mail.smtp.writetimeout=10000
+
+# ============================================================
+# JWT 설정 (secret은 32자 이상 랜덤 문자열로 교체)
+# ============================================================
+jwt.secret=your-secret-key-must-be-at-least-32-characters-long
+jwt.access-expiration=1800000
+jwt.refresh-expiration=604800000
+
+# ============================================================
+# 파일 업로드 경로
+# ============================================================
+file.image.web-path=/upload/
+file.image.folder-path=C:/project/upload/
