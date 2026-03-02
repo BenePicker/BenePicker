@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+  <settings>
+    <!-- DB 컬럼명(snake_case) → Java 필드명(camelCase) 자동 매핑 -->
+    <setting name="mapUnderscoreToCamelCase" value="true"/>
+    <!-- NULL 컬럼도 매핑 처리 -->
+    <setting name="callSettersOnNulls" value="true"/>
+  </settings>
+
+  <typeAliases>
+    <!-- DTO 패키지 등록 시 전체 경로 없이 클래스명으로 사용 가능 -->
+    <package name="com.benepicker"/>
+  </typeAliases>
+</configuration>
