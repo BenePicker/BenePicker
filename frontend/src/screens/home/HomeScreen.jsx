@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
+
 const { width: SW } = Dimensions.get('window');
 const CARD_W = SW * 0.50;
 const PURPLE = '#7C3AED';
@@ -29,55 +30,59 @@ const NEARBY_STORES = [
     name: '공차 인하대후문점',
     category: '카페',
     bgColor: '#2A1F3D',
-    brandText: 'Gong cha',
-    brandTextColor: '#FFFFFF',
     walkTime: 5,
     rating: 4.7,
     benefit: '인기메뉴 6종 50% 할인',
-    badges: [{ label: 'kt', bg: '#FF5000', color: '#fff' }],
+        badges: [
+      { image: require('../../../assets/logo/kt.png') },
+    ],
     liked: false,
+    logo: require('../../../assets//gongcha.png'),
   },
   {
     id: 2,
     name: '스타벅스 인하대점',
     category: '카페',
     bgColor: '#1E3932',
-    brandText: 'STARBUCKS',
-    brandTextColor: '#FFFFFF',
     walkTime: 3,
     rating: 4.6,
     benefit: '1,800원에 아메리카노 1+1',
     badges: [
-      { label: '삼성Pay', bg: '#1428A0', color: '#fff' },
-      { label: 'kt', bg: '#FF5000', color: '#fff' },
+      { image: require('../../../assets/logo/sb.png') },
+      { image: require('../../../assets/logo/ba.png') },
+      { image: require('../../../assets/logo/kt.png') },
     ],
     liked: true,
+    logo: require('../../../assets/starbucks.png'),
   },
   {
     id: 3,
     name: '한솔도시락',
     category: '도시락',
     bgColor: '#1A3A5C',
-    brandText: '한솔도시락',
-    brandTextColor: '#FFFFFF',
     walkTime: 4,
     rating: 4.3,
     benefit: '국민e혜택 10% 할인',
-    badges: [{ label: '국민e혜택', bg: '#00A651', color: '#fff' }],
+    badges: [
+      { image: require('../../../assets/logo/kp.png') },
+      { image: require('../../../assets/logo/ba.png') },
+    ],
     liked: false,
+    logo: require('../../../assets/hansot.png'),
   },
   {
     id: 4,
     name: '메가MGC커피',
     category: '카페',
     bgColor: '#1B1B2F',
-    brandText: 'MEGA COFFEE',
-    brandTextColor: '#FFD700',
     walkTime: 2,
     rating: 4.5,
     benefit: '아이스 아메리카노 2+1',
-    badges: [{ label: 'kt', bg: '#FF5000', color: '#fff' }],
+    badges: [
+      { image: require('../../../assets/logo/kt.png') },
+    ],
     liked: false,
+    logo: require('../../../assets/megacoffee.png'),
   },
 ];
 
@@ -115,10 +120,16 @@ function StoreCard({ store, isLiked, onToggleLike }) {
       <Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
         {/* 매장 이미지 영역 */}
         <View style={[styles.storeImgArea, { backgroundColor: store.bgColor }]}>
+          {store.logo && (
+            <Image
+              source={store.logo}
+              style={styles.storeImage}
+              resizeMode="cover"
+            />
+          )}
+
           <View style={styles.storeImgOverlay} />
-          <Text style={[styles.storeBrandText, { color: store.brandTextColor }]}>
-            {store.brandText}
-          </Text>
+
           <TouchableOpacity style={styles.heartBtn} onPress={handleHeart}>
             <Animated.View style={{ transform: [{ scale: heartScale }] }}>
               <Ionicons
@@ -143,12 +154,15 @@ function StoreCard({ store, isLiked, onToggleLike }) {
           <Text style={styles.storeBenefit} numberOfLines={2}>
             {store.benefit}
           </Text>
-          <View style={styles.badgeRow}>
-            {store.badges.map(b => (
-              <View key={b.label} style={[styles.badge, { backgroundColor: b.bg }]}>
-                <Text style={[styles.badgeText, { color: b.color }]}>{b.label}</Text>
-              </View>
-            ))}
+            <View style={styles.badgeRow}>
+              {store.badges.map((b, index) => (
+                <Image
+                  key={index}
+                  source={b.image}
+                  style={styles.badgeImage}
+                  resizeMode="contain"
+                />
+              ))}
           </View>
         </View>
       </Pressable>
@@ -173,12 +187,11 @@ function TDayCard({ store }) {
       >
         {/* 좌측 T데이 이미지 영역 */}
         <View style={styles.tdayImgArea}>
-          <View style={styles.tdayLogoRow}>
-            <Text style={styles.tdayLogoText}>T day</Text>
-            <Text style={styles.tdayHeart}> ♥</Text>
-          </View>
-          <Text style={styles.tdaySubLabel}>레디팩 1+1</Text>
-          <Text style={styles.tdayEmoji}>🍦</Text>
+          <Image
+            source={require('../../../assets/tday.png')}
+            style={styles.tdayImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* 우측 정보 */}
@@ -433,6 +446,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#9CA3AF',
   },
 
+  //로고 뱃지
+  badgeImage: {
+  width: 22,
+  height: 22,
+  },
+
   // 인사말 영역 (오른쪽 여백으로 마스코트 공간)
   greetingSection: {
     paddingLeft: 24,
@@ -520,13 +539,22 @@ const styles = StyleSheet.create({
   },
   storeImgArea: {
     height: 115, justifyContent: 'flex-end',
-    alignItems: 'flex-start', padding: 10,
+    alignItems: 'flex-start',
     position: 'relative',
   },
   storeImgOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0, height: 55,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
+
+  // 가게 이미지
+  storeImage: {
+  position: 'absolute',
+  width: '100%',
+  height: '100%',
+  top: 0,
+  left: 0,
+},
   storeBrandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.3, zIndex: 1 },
   heartBtn: { position: 'absolute', top: 8, right: 8, padding: 4, zIndex: 2 },
   storeInfo:     { padding: 10 },
@@ -535,7 +563,7 @@ const styles = StyleSheet.create({
   storeName:     { fontSize: 13, fontWeight: '700', color: '#111827', marginTop: 5 },
   storeCategory: { fontSize: 10, color: '#9CA3AF', marginTop: 1 },
   storeBenefit:  { fontSize: 11, color: '#374151', marginTop: 4, lineHeight: 16 },
-  badgeRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 7 },
+  badgeRow:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 7 },
   badge:         { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   badgeText:     { fontSize: 10, fontWeight: '700' },
 
@@ -550,19 +578,29 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   tdayInner:    { flexDirection: 'row', minHeight: 110 },
-  tdayImgArea:  {
-    width: 110, backgroundColor: '#FFE4E8',
-    justifyContent: 'center', alignItems: 'center', padding: 10,
-  },
+tdayImgArea: {
+  width: 130,
+  height: 110,
+  backgroundColor: '#fff',
+  justifyContent: 'center',
+  alignItems: 'center',
+  overflow: 'hidden',
+},
+
+tdayImage: {
+  width: '100%',
+  height: '100%',
+},
+
   tdayLogoRow:  { flexDirection: 'row', alignItems: 'center' },
-  tdayLogoText: { fontSize: 13, fontWeight: '900', color: '#E60012' },
-  tdayHeart:    { fontSize: 13, color: '#E60012' },
-  tdaySubLabel: { fontSize: 10, fontWeight: '700', color: '#E60012', marginTop: 3, marginBottom: 8 },
+  tdayLogoText: { fontSize: 13, fontWeight: '900', color: '#3717CD' },
+  tdayHeart:    { fontSize: 13, color: '#3717CD' },
+  tdaySubLabel: { fontSize: 10, fontWeight: '700', color: '#3717CD', marginTop: 3, marginBottom: 8 },
   tdayEmoji:    { fontSize: 36 },
   tdayInfo:     { flex: 1, padding: 12, justifyContent: 'center' },
   tdayNameRow:  { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 },
   tdayName:     { fontSize: 14, fontWeight: '700', color: '#111827' },
-  tdayTag:      { fontSize: 13, fontWeight: '700', color: '#E60012' },
+  tdayTag:      { fontSize: 13, fontWeight: '700', color: '#3717CD' },
   tdayCategory: { fontSize: 11, color: '#6B7280' },
   tdayBenefit:  { fontSize: 12, color: '#374151', lineHeight: 17, marginBottom: 6 },
   tdayRating:   { fontSize: 12, color: '#6B7280' },

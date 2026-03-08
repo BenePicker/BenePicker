@@ -13,13 +13,13 @@ const Tab = createBottomTabNavigator();
 const ICONS = {
   Home:     { on: 'home',            off: 'home-outline'           },
   History:  { on: 'bag-handle',      off: 'bag-handle-outline'     },
-  Map:      { on: 'compass',         off: 'compass-outline'        },
+  Map:      { on: 'map',         off: 'map-outline'        },
   Bookmark: { on: 'heart',           off: 'heart-outline'          },
   MyPage:   { on: 'person',          off: 'person-outline'         },
 };
 
 const LABELS = {
-  Home:     '홈',
+  Home:     '홈', 
   History:  '사용내역',
   Map:      '지도',
   Bookmark: '찜',

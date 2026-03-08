@@ -12,7 +12,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
 # Native
 .kotlin/
@@ -36,10 +35,16 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
 
-# typescript
-*.tsbuildinfo
+# logs
+*.log
+logs/
+
+# test coverage
+coverage/
 
 # generated native folders
 /ios
