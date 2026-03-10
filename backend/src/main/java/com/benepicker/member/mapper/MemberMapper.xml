@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.benepicker.member.mapper.MemberMapper">
+
+    <resultMap id="memberResultMap" type="com.benepicker.member.dto.Member">
+        <id property="memberNo" column="member_no"/>
+        <result property="memberEmail" column="member_email"/>
+        <result property="memberPw" column="member_pw"/>
+        <result property="memberNickname" column="member_nickname"/>
+        <result property="memberTel" column="member_tel"/>
+        <result property="enrollDate" column="enroll_date"/>
+        <result property="memberDelFl" column="member_del_fl"/>
+    </resultMap>
+
+    <insert id="insertMember" parameterType="com.benepicker.member.dto.Member" useGeneratedKeys="true" keyProperty="memberNo">
+        INSERT INTO member (
+        member_email,
+        member_pw,
+        member_nickname,
+        member_tel
+        )
+        VALUES (
+        #{memberEmail},
+        #{memberPw},
+        #{memberNickname},
+        #{memberTel}
+        )
+    </insert>
+
+    <select id="findByEmail" resultMap="memberResultMap">
+        SELECT
+        member_no,
+        member_email,
+        member_pw,
+        member_nickname,
+        member_tel,
+        enroll_date,
+        member_del_fl
+        FROM member
+        WHERE member_email = #{memberEmail}
+        LIMIT 1
+    </select>
+
+    <select id="existsByEmail" resultType="int">
+        SELECT COUNT(*)
+        FROM member
+        WHERE member_email = #{memberEmail}
+    </select>
+
+    <select id="checkNickname" resultType="int">
+        SELECT COUNT(*)
+        FROM member
+        WHERE member_nickname = #{memberNickname}
+    </select>
+
+    <select id="checkEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM member
+        WHERE member_email = #{memberEmail}
+    </select>
+
+</mapper>

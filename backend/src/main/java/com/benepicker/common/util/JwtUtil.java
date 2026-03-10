@@ -4,6 +4,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import com.benepicker.member.dto.Member;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,18 +30,18 @@ public class JwtUtil {
         this.refreshExpiration = refreshExpiration;
     }
 
-    public String generateAccessToken(String memberId) {
+    public String generateAccessToken(Member member) {
         return Jwts.builder()
-            .subject(memberId)
+            .subject(member.getMemberEmail())
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + accessExpiration))
             .signWith(secretKey)
             .compact();
     }
 
-    public String generateRefreshToken(String memberId) {
+    public String generateRefreshToken(Member member) {
         return Jwts.builder()
-            .subject(memberId)
+            .subject(member.getMemberEmail())
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
             .signWith(secretKey)
@@ -66,5 +67,9 @@ public class JwtUtil {
             .build()
             .parseSignedClaims(token)
             .getPayload();
+    }
+
+    public Long getMemberNo(String token) {
+        return Long.parseLong(getClaims(token).getSubject());
     }
 }
