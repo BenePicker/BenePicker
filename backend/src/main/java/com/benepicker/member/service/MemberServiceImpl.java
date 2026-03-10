@@ -63,7 +63,7 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalArgumentException("닉네임은 필수입니다.");
         }
 
-        if (memberMapper.existsByEmail(member.getMemberEmail()) > 0) {
+        if (memberMapper.checkEmail(member.getMemberEmail()) > 0) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 

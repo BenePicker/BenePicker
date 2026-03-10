@@ -12,8 +12,6 @@ public interface MemberMapper {
 
     Member findByEmail(@Param("memberEmail") String memberEmail);
 
-    int existsByEmail(@Param("memberEmail") String memberEmail);
-
     int checkNickname(@Param("memberNickname") String memberNickname);
 
     int checkEmail(@Param("memberEmail") String memberEmail);
