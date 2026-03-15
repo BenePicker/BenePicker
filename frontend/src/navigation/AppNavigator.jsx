@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import SearchScreen from '../screens/search/SearchScreen';
 
 import HomeScreen     from '../screens/home/HomeScreen';
 import HistoryScreen  from '../screens/history/HistoryScreen';
@@ -58,6 +59,16 @@ export default function AppNavigator() {
       <Tab.Screen name="Map"      component={MapScreen}      options={{ tabBarLabel: LABELS.Map }}      />
       <Tab.Screen name="Bookmark" component={BookmarkScreen} options={{ tabBarLabel: LABELS.Bookmark }} />
       <Tab.Screen name="MyPage"   component={MyPageScreen}   options={{ tabBarLabel: LABELS.MyPage }}   />
+
+      <Tab.Screen
+        name="SearchScreen"
+        component={SearchScreen}
+        options={{
+          tabBarButton: () => null,
+          tabBarStyle: { display: 'none' },
+        }}
+/>
+
     </Tab.Navigator>
   );
 }
