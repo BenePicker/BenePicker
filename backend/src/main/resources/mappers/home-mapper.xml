@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.benepicker.home.mapper.HomeMapper">
+    <select id="findNearbyBenefits" resultType="com.benepicker.home.dto.response.NearbyBenefitResponse">
+        SELECT *
+        FROM (
+        SELECT
+        s.store_id AS storeId,
+        s.store_name AS storeName,
+        br.brand_name AS brandName,
+        s.store_address AS storeAddress,
+        s.store_lat AS storeLat,
+        s.store_lng AS storeLng,
+        s.store_image_url AS storeImageUrl,
+
+        b.benefit_id AS benefitId,
+        b.benefit_type AS benefitType,
+        b.benefit_content AS benefitContent,
+        b.benefit_discount AS benefitDiscount,
+        b.benefit_condition AS benefitCondition,
+
+        ROUND(
+        6371000 * ACOS(
+        LEAST(
+        1,
+        GREATEST(
+        -1,
+        COS(RADIANS(#{latitude}))
+        * COS(RADIANS(s.store_lat))
+        * COS(RADIANS(s.store_lng) - RADIANS(#{longitude}))
+        + SIN(RADIANS(#{latitude}))
+        * SIN(RADIANS(s.store_lat))
+        )
+        )
+        )
+        ) AS distanceMeter,
+
+        <choose>
+            <when test="memberNo != null">
+                CASE
+                WHEN EXISTS (
+                SELECT 1
+                FROM wish w
+                WHERE w.member_no = #{memberNo}
+                AND w.store_id = s.store_id
+                AND w.wish_type = 'STORE'
+                )
+                THEN TRUE
+                ELSE FALSE
+                END AS isLiked
+            </when>
+            <otherwise>
+                FALSE AS isLiked
+            </otherwise>
+        </choose>
+
+        FROM store s
+        JOIN brand br
+        ON s.brand_id = br.brand_id
+        JOIN benefit b
+        ON s.store_id = b.store_id
+        WHERE s.store_lat IS NOT NULL
+        AND s.store_lng IS NOT NULL
+        AND (b.start_date IS NULL OR b.start_date &lt;= CURRENT_DATE)
+        AND (b.end_date IS NULL OR b.end_date &gt;= CURRENT_DATE)
+        ) t
+        WHERE t.distanceMeter &lt; #{radius}
+        ORDER BY t.distanceMeter ASC, t.storeId ASC, t.benefitId ASC
+        LIMIT 20
+    </select>
+
+</mapper>
