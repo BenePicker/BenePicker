@@ -1,4 +1,4 @@
-package com.benepicker.auth.dto;
+package com.benepicker.common.auth.dto;
 
 import java.util.Collection;
 import java.util.Collections;

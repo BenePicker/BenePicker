@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.benepicker.auth.dto.CustomUserDetails;
+import com.benepicker.common.auth.dto.CustomUserDetails;
 import com.benepicker.home.dto.response.HomeNearbyResponse;
 import com.benepicker.home.service.HomeService;
 

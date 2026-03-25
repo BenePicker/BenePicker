@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.benepicker.auth.dto.CustomUserDetails;
+import com.benepicker.common.auth.dto.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
