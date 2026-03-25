@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.benepicker.benefit.mapper.BenefitMapper">
+
+    <resultMap id="benefitDetailResultMap" type="com.benepicker.benefit.dto.response.BenefitDetailResponse">
+        <id property="benefitId" column="benefit_id"/>
+        <result property="benefitType" column="benefit_type"/>
+        <result property="benefitContent" column="benefit_content"/>
+        <result property="benefitDiscount" column="benefit_discount"/>
+        <result property="benefitCondition" column="benefit_condition"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+
+        <result property="storeId" column="store_id"/>
+        <result property="storeName" column="store_name"/>
+        <result property="storeAddress" column="store_address"/>
+        <result property="storeLat" column="store_lat"/>
+        <result property="storeLng" column="store_lng"/>
+        <result property="storeImageUrl" column="store_image_url"/>
+        <result property="storeLogoUrl" column="store_logo_url"/>
+        <result property="storeAppLink" column="store_app_link"/>
+
+        <result property="brandId" column="brand_id"/>
+        <result property="brandName" column="brand_name"/>
+        <result property="brandImageUrl" column="brand_image_url"/>
+    </resultMap>
+
+    <select id="selectBenefitDetail" resultMap="benefitDetailResultMap">
+        SELECT
+        b.benefit_id,
+        b.benefit_type,
+        b.benefit_content,
+        b.benefit_discount,
+        b.benefit_condition,
+        b.start_date,
+        b.end_date,
+
+        s.store_id,
+        s.store_name,
+        s.store_address,
+        CAST(s.store_lat AS DOUBLE) AS store_lat,
+        CAST(s.store_lng AS DOUBLE) AS store_lng,
+        s.store_image_url,
+        s.store_logo_url,
+        s.store_app_link,
+
+        br.brand_id,
+        br.brand_name,
+        br.brand_image_url
+        FROM benefit b
+        JOIN store s
+        ON b.store_id = s.store_id
+        LEFT JOIN brand br
+        ON s.brand_id = br.brand_id
+        WHERE b.benefit_id = #{benefitId}
+    </select>
+
+    <select id="existsStoreWish" resultType="int">
+        SELECT COUNT(*)
+        FROM wish
+        WHERE member_no = #{memberNo}
+        AND store_id = #{storeId}
+        AND wish_type = 'STORE'
+    </select>
+
+    <select id="existsBrandWish" resultType="int">
+        SELECT COUNT(*)
+        FROM wish
+        WHERE member_no = #{memberNo}
+        AND brand_id = #{brandId}
+        AND wish_type = 'BRAND'
+    </select>
+
+</mapper>
