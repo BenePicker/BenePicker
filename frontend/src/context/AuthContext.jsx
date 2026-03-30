@@ -1,17 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface AuthContextType {
-  token: string | null;
-  isLoading: boolean;
-  signIn: (accessToken: string, refreshToken: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+const AuthContext = createContext(null);
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
+export function AuthProvider({ children }) {
+  const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,7 +14,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const signIn = async (accessToken: string, refreshToken: string) => {
+  const signIn = async (accessToken, refreshToken) => {
     await AsyncStorage.multiSet([
       ['accessToken', accessToken],
       ['refreshToken', refreshToken],

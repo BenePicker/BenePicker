@@ -8,16 +8,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation';
 import { login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 
-type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
-};
-
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen({ navigation }) {
   const { signIn } = useAuth();
   const [memberEmail, setMemberEmail] = useState('');
   const [memberPw, setMemberPw] = useState('');
@@ -32,7 +26,7 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       const res = await login({ memberEmail, memberPw });
       await signIn(res.data.accessToken, res.data.refreshToken);
-    } catch (e: any) {
+    } catch (e) {
       Alert.alert('로그인 실패', e.response?.data?.message ?? '다시 시도해주세요.');
     } finally {
       setLoading(false);

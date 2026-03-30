@@ -9,15 +9,9 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation';
 import { signup } from '../../api/auth';
 
-type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
-};
-
-export default function SignupScreen({ navigation }: Props) {
+export default function SignupScreen({ navigation }) {
   const [memberEmail, setMemberEmail] = useState('');
   const [memberPw, setMemberPw] = useState('');
   const [memberNickname, setMemberNickname] = useState('');
@@ -34,7 +28,7 @@ export default function SignupScreen({ navigation }: Props) {
       Alert.alert('가입 완료', '로그인해주세요.', [
         { text: '확인', onPress: () => navigation.navigate('Login') },
       ]);
-    } catch (e: any) {
+    } catch (e) {
       Alert.alert('가입 실패', e.response?.data?.message ?? '다시 시도해주세요.');
     } finally {
       setLoading(false);

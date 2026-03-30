@@ -17,7 +17,7 @@ function RootNavigator() {
     );
   }
 
-  return token ? <AppNavigator /> : <AuthNavigator />;
+  return <AppNavigator />; // TODO: 개발 완료 후 → token ? <AppNavigator /> : <AuthNavigator />
 }
 
 export default function App() {
