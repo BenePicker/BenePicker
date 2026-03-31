@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.benepicker.search.mapper.SearchMapper">
+
+    <select id="searchByKeyword" resultType="com.benepicker.search.dto.response.SearchResultResponse">
+        SELECT
+        s.store_id AS storeId,
+        s.store_name AS storeName,
+        s.store_address AS storeAddress,
+        CAST(s.store_lat AS DOUBLE PRECISION) AS storeLat,
+        CAST(s.store_lng AS DOUBLE PRECISION) AS storeLng,
+        s.store_image_url AS storeImageUrl,
+
+        b.brand_id AS brandId,
+        b.brand_name AS brandName,
+        b.brand_image_url AS brandImageUrl,
+
+        be.benefit_id AS benefitId,
+        be.benefit_type AS benefitType,
+        be.benefit_content AS benefitContent,
+        be.benefit_discount AS benefitDiscount,
+        be.benefit_condition AS benefitCondition
+        FROM store s
+        JOIN brand b
+        ON s.brand_id = b.brand_id
+        LEFT JOIN benefit be
+        ON s.store_id = be.store_id
+        WHERE
+        s.store_name ILIKE CONCAT('%', #{keyword}, '%')
+        OR b.brand_name ILIKE CONCAT('%', #{keyword}, '%')
+        OR be.benefit_content ILIKE CONCAT('%', #{keyword}, '%')
+        OR be.benefit_condition ILIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY s.store_id DESC, be.benefit_id DESC
+    </select>
+
+    <insert id="insertSearchHistory">
+        INSERT INTO search_history (
+        member_no,
+        keyword
+        ) VALUES (
+        #{memberNo},
+        #{keyword}
+        )
+    </insert>
+
+    <select id="findRecentSearches" resultType="com.benepicker.search.dto.response.RecentSearchResponse">
+        SELECT
+        search_id AS searchId,
+        keyword,
+        search_date AS searchDate
+        FROM search_history
+        WHERE member_no = #{memberNo}
+        ORDER BY search_date DESC
+        LIMIT 10
+    </select>
+
+    <delete id="deleteRecentSearch">
+        DELETE FROM search_history
+        WHERE search_id = #{searchId}
+        AND member_no = #{memberNo}
+    </delete>
+
+    <delete id="deleteAllRecentSearches">
+        DELETE FROM search_history
+        WHERE member_no = #{memberNo}
+    </delete>
+
+</mapper>
