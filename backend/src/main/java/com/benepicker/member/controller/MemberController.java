@@ -197,7 +197,7 @@ public class MemberController {
                     - 개인정보 동의 여부
                     - 마케팅 동의 여부
                     """,
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "BearerAuth")
     )
     @ApiResponses({
             @ApiResponse(
@@ -226,7 +226,7 @@ public class MemberController {
                     - 이름
                     - 프로필 이미지 URL
                     """,
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "BearerAuth")
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
@@ -255,7 +255,7 @@ public class MemberController {
                     
                     현재 비밀번호가 일치해야 변경할 수 있습니다.
                     """,
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "BearerAuth")
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "비밀번호 변경 성공"),
