@@ -1,5 +1,7 @@
 package com.benepicker.member.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -13,12 +15,12 @@ import lombok.Builder;
 @Builder
 public class Member {
 
-    private int    memberNo;
+    private Long memberNo;
     private String memberEmail;
     private String memberPw;
     private String memberNickname;
     private String memberTel;
     private String profileImg;
     private String memberDelFl;
-    private String enrollDate;
+    private LocalDateTime enrollDate;
 }
