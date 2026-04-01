@@ -53,4 +53,62 @@
         WHERE MEMBER_NICKNAME = #{memberNickname}
     </select>
 
+    <!-- 회원 정보 조회 -->
+    <select id="selectMemberInfo" resultType="com.benepicker.member.dto.response.MemberInfoResponse">
+        SELECT
+        member_no AS memberNo,
+        member_email AS memberEmail,
+        member_nickname AS memberNickname,
+        member_name AS memberName,
+        member_tel AS memberTel,
+        profile_image_url AS profileImageUrl,
+        CAST(birth_date AS VARCHAR) AS birthDate,
+        gender,
+        privacy_agree_fl AS privacyAgreeFl,
+        marketing_agree_fl AS marketingAgreeFl
+        FROM member
+        WHERE member_no = #{memberNo}
+        AND member_del_fl = 'N'
+    </select>
+
+    <!-- 비밀번호 조회 -->
+    <select id="selectPasswordByMemberNo" resultType="string">
+        SELECT member_pw
+        FROM member
+        WHERE member_no = #{memberNo}
+    </select>
+
+    <!-- 프로필 업데이트 -->
+    <update id="updateProfile">
+        UPDATE member
+        SET
+        member_nickname = #{request.memberNickname},
+        member_name = #{request.memberName},
+        profile_image_url = #{request.profileImageUrl},
+        updated_date = CURRENT_TIMESTAMP
+        WHERE member_no = #{memberNo}
+    </update>
+
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE member
+        SET
+        member_pw = #{newPassword},
+        password_updated_at = CURRENT_TIMESTAMP,
+        updated_date = CURRENT_TIMESTAMP
+        WHERE member_no = #{memberNo}
+    </update>
+
+    <!-- 개인정보 수정 -->
+    <update id="updatePrivacy">
+        UPDATE member
+        SET
+        member_tel = #{request.memberTel},
+        birth_date = #{request.birthDate},
+        gender = #{request.gender},
+        privacy_agree_fl = #{request.privacyAgreeFl},
+        marketing_agree_fl = #{request.marketingAgreeFl},
+        updated_date = CURRENT_TIMESTAMP
+        WHERE member_no = #{memberNo}
+    </update>
 </mapper>

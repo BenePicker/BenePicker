@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.benepicker.common.util.JwtUtil;
+import com.benepicker.member.dto.request.UpdatePasswordRequest;
+import com.benepicker.member.dto.request.UpdatePrivacyRequest;
+import com.benepicker.member.dto.request.UpdateProfileRequest;
+import com.benepicker.member.dto.response.MemberInfoResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,5 +90,33 @@ public class MemberServiceImpl implements MemberService {
     @Transactional(readOnly = true)
     public int checkNickname(String memberNickname) {
         return memberMapper.checkNickname(memberNickname);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MemberInfoResponse getMyInfo(Long memberNo) {
+        return memberMapper.selectMemberInfo(memberNo);
+    }
+
+    @Override
+    public void updateProfile(Long memberNo, UpdateProfileRequest request) {
+        memberMapper.updateProfile(memberNo, request);
+    }
+
+    @Override
+    public void updatePassword(Long memberNo, UpdatePasswordRequest request) {
+        String encodedPassword = memberMapper.selectPasswordByMemberNo(memberNo);
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), encodedPassword)) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        String newEncodedPassword = passwordEncoder.encode(request.getNewPassword());
+        memberMapper.updatePassword(memberNo, newEncodedPassword);
+    }
+
+    @Override
+    public void updatePrivacy(Long memberNo, UpdatePrivacyRequest request) {
+        memberMapper.updatePrivacy(memberNo, request);
     }
 }

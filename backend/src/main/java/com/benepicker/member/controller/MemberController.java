@@ -2,6 +2,11 @@ package com.benepicker.member.controller;
 
 import java.util.Map;
 
+import com.benepicker.common.auth.dto.CustomUserDetails;
+import com.benepicker.member.dto.request.UpdatePasswordRequest;
+import com.benepicker.member.dto.request.UpdatePrivacyRequest;
+import com.benepicker.member.dto.request.UpdateProfileRequest;
+import com.benepicker.member.dto.response.MemberInfoResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +27,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Member", description = "회원 관련 API")
 @RestController
@@ -171,5 +178,39 @@ public class MemberController {
     ) {
         int count = memberService.checkNickname(memberNickname);
         return ResponseEntity.ok(Map.of("available", count == 0));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MemberInfoResponse> getMyInfo(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(memberService.getMyInfo(userDetails.getMemberNo()));
+    }
+
+    @PatchMapping("/me/profile")
+    public ResponseEntity<Void> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdateProfileRequest request
+    ) {
+        memberService.updateProfile(userDetails.getMemberNo(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdatePasswordRequest request
+    ) {
+        memberService.updatePassword(userDetails.getMemberNo(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/me/privacy")
+    public ResponseEntity<Void> updatePrivacy(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdatePrivacyRequest request
+    ) {
+        memberService.updatePrivacy(userDetails.getMemberNo(), request);
+        return ResponseEntity.ok().build();
     }
 }
