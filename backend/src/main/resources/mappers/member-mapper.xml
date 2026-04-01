@@ -104,7 +104,7 @@
         UPDATE member
         SET
         member_tel = #{request.memberTel},
-        birth_date = #{request.birthDate},
+        birth_date = #{request.birthDate, jdbcType=DATE},
         gender = #{request.gender},
         privacy_agree_fl = #{request.privacyAgreeFl},
         marketing_agree_fl = #{request.marketingAgreeFl},
