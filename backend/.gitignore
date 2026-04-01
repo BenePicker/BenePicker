@@ -22,4 +22,3 @@ out/
 
 # DB 연결 정보 등 민감 설정 (실제 값 입력 후 커밋 방지)
 src/main/resources/config.properties
-.env

@@ -14,7 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.benepicker.common.config.security.JwtAuthenticationFilter;
+import com.benepicker.common.util.JwtFilter;
 import com.benepicker.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 
@@ -39,20 +39,17 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        "/api/member/login",
-                        "/api/member/signup",
-                        "/api/member/check-email",
-                        "/api/member/check-nickname",
-                        "/api/member/email/**",
-                        "/ws/**",
-                        "/ws-native/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**"
+                    "/api/member/login",
+                    "/api/member/signup",
+                    "/api/member/check-email",
+                    "/api/member/check-nickname",
+                    "/api/member/email/**",
+                    "/ws/**",
+                    "/ws-native/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -70,4 +67,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

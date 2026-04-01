@@ -1,114 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.benepicker.member.mapper.MemberMapper">
 
-    <!-- 이메일로 회원 조회 -->
-    <select id="findByEmail" resultType="com.benepicker.member.dto.Member">
-        SELECT
-        MEMBER_NO,
-        MEMBER_EMAIL,
-        MEMBER_PW,
-        MEMBER_NICKNAME,
-        MEMBER_TEL,
-        ENROLL_DATE,
-        MEMBER_DEL_FL
-        FROM MEMBER
-        WHERE MEMBER_EMAIL = #{memberEmail}
-        AND MEMBER_DEL_FL = 'N'
-    </select>
+  <!-- 이메일로 회원 조회 -->
+  <select id="findByEmail" resultType="Member">
+    SELECT *
+    FROM MEMBER
+    WHERE MEMBER_EMAIL = #{memberEmail}
+      AND MEMBER_DEL_FL = 'N'
+  </select>
 
-    <!-- 회원가입 -->
-    <insert id="insertMember"
-            parameterType="com.benepicker.member.dto.Member"
-            useGeneratedKeys="true"
-            keyProperty="memberNo">
-        INSERT INTO MEMBER (
-        MEMBER_EMAIL,
-        MEMBER_PW,
-        MEMBER_NICKNAME,
-        MEMBER_DEL_FL
-        <if test="memberTel != null and memberTel != ''">, MEMBER_TEL</if>
-        ) VALUES (
-        #{memberEmail},
-        #{memberPw},
-        #{memberNickname},
-        'N'
-        <if test="memberTel != null and memberTel != ''">, #{memberTel}</if>
-        )
-    </insert>
+  <!-- 회원가입 -->
+  <insert id="signup">
+    INSERT INTO MEMBER (
+      MEMBER_NO, MEMBER_EMAIL, MEMBER_PW, MEMBER_NICKNAME, MEMBER_DEL_FL
+      <if test="memberTel != null">, MEMBER_TEL</if>
+    ) VALUES (
+      SEQ_MEMBER_NO.NEXTVAL,
+      #{memberEmail}, #{memberPw}, #{memberNickname}, 'N'
+      <if test="memberTel != null">, #{memberTel}</if>
+    )
+  </insert>
 
-    <!-- 이메일 중복 확인 -->
-    <select id="checkEmail" resultType="int">
-        SELECT COUNT(*)
-        FROM MEMBER
-        WHERE MEMBER_EMAIL = #{memberEmail}
-    </select>
+  <!-- 이메일 중복 확인 -->
+  <select id="checkEmail" resultType="int">
+    SELECT COUNT(*)
+    FROM MEMBER
+    WHERE MEMBER_EMAIL = #{memberEmail}
+  </select>
 
-    <!-- 닉네임 중복 확인 -->
-    <select id="checkNickname" resultType="int">
-        SELECT COUNT(*)
-        FROM MEMBER
-        WHERE MEMBER_NICKNAME = #{memberNickname}
-    </select>
+  <!-- 닉네임 중복 확인 -->
+  <select id="checkNickname" resultType="int">
+    SELECT COUNT(*)
+    FROM MEMBER
+    WHERE MEMBER_NICKNAME = #{memberNickname}
+  </select>
 
-    <!-- 회원 정보 조회 -->
-    <select id="selectMemberInfo" resultType="com.benepicker.member.dto.response.MemberInfoResponse">
-        SELECT
-        member_no AS memberNo,
-        member_email AS memberEmail,
-        member_nickname AS memberNickname,
-        member_name AS memberName,
-        member_tel AS memberTel,
-        profile_image_url AS profileImageUrl,
-        CAST(birth_date AS VARCHAR) AS birthDate,
-        gender,
-        privacy_agree_fl AS privacyAgreeFl,
-        marketing_agree_fl AS marketingAgreeFl
-        FROM member
-        WHERE member_no = #{memberNo}
-        AND member_del_fl = 'N'
-    </select>
-
-    <!-- 비밀번호 조회 -->
-    <select id="selectPasswordByMemberNo" resultType="string">
-        SELECT member_pw
-        FROM member
-        WHERE member_no = #{memberNo}
-    </select>
-
-    <!-- 프로필 업데이트 -->
-    <update id="updateProfile">
-        UPDATE member
-        SET
-        member_nickname = #{request.memberNickname},
-        member_name = #{request.memberName},
-        profile_image_url = #{request.profileImageUrl},
-        updated_date = CURRENT_TIMESTAMP
-        WHERE member_no = #{memberNo}
-    </update>
-
-    <!-- 비밀번호 변경 -->
-    <update id="updatePassword">
-        UPDATE member
-        SET
-        member_pw = #{newPassword},
-        password_updated_at = CURRENT_TIMESTAMP,
-        updated_date = CURRENT_TIMESTAMP
-        WHERE member_no = #{memberNo}
-    </update>
-
-    <!-- 개인정보 수정 -->
-    <update id="updatePrivacy">
-        UPDATE member
-        SET
-        member_tel = #{request.memberTel},
-        birth_date = #{request.birthDate, jdbcType=DATE},
-        gender = #{request.gender},
-        privacy_agree_fl = #{request.privacyAgreeFl},
-        marketing_agree_fl = #{request.marketingAgreeFl},
-        updated_date = CURRENT_TIMESTAMP
-        WHERE member_no = #{memberNo}
-    </update>
 </mapper>
