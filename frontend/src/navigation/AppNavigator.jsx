@@ -60,14 +60,6 @@ export default function AppNavigator() {
       <Tab.Screen name="Bookmark" component={BookmarkScreen} options={{ tabBarLabel: LABELS.Bookmark }} />
       <Tab.Screen name="MyPage"   component={MyPageScreen}   options={{ tabBarLabel: LABELS.MyPage }}   />
 
-      <Tab.Screen
-        name="SearchScreen"
-        component={SearchScreen}
-        options={{
-          tabBarButton: () => null,
-          tabBarStyle: { display: 'none' },
-        }}
-/>
 
     </Tab.Navigator>
   );
