@@ -76,7 +76,7 @@ export default function SearchHomeScreen() {
     >
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 30 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.topBlankArea} />
