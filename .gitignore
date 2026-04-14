@@ -20,6 +20,14 @@ backend/build/
 backend/out/
 backend/*.class
 backend/src/main/resources/config.properties
+backend/.env
+backend/bin/
+
+# ============================================================
+# Tools / Local workspace
+# ============================================================
+.claude/
+.metadata/
 
 # ============================================================
 # Frontend (Expo / React Native 모바일 앱)
