@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions,
 } from 'react-native';
+
+const CARD_WIDTH = Dimensions.get('window').width * 0.7;
+const CARD_HEIGHT = CARD_WIDTH * (41 / 65);
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../context/AuthContext';
 
 const BANKS = [
   { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF', logo: require('../../../assets/logo/won로고.png') },
@@ -17,7 +21,12 @@ const MENU = ['나의 리뷰 관리', '고객센터', '1:1 문의'];
 
 export default function MyPageScreen() {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [selected, setSelected] = useState('won');
+
+  const nickname = user?.memberNickname ?? '';
+  const email = user?.memberEmail ?? '';
+  const profileImg = user?.profileImageUrl;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -36,14 +45,18 @@ export default function MyPageScreen() {
 
         {/* Profile */}
         <View style={styles.profileRow}>
-          <View style={styles.avatar} />
+          {profileImg ? (
+            <Image source={{ uri: profileImg }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar} />
+          )}
           <View style={styles.profileInfo}>
             <View style={styles.nameRow}>
-              <Text style={styles.name}>김인하 </Text>
+              <Text style={styles.name}>{nickname} </Text>
               <Text style={styles.nameSub}>님</Text>
               <Text style={styles.tBadge}>T</Text>
             </View>
-            <Text style={styles.email}>iminhastudent@gmail.com</Text>
+            <Text style={styles.email}>{email}</Text>
           </View>
         </View>
 
@@ -78,17 +91,11 @@ export default function MyPageScreen() {
 
         {/* Card preview */}
         <View style={styles.cardPreview}>
-          <Text style={styles.wooriLabel}>WOORI CARD</Text>
-          <View style={styles.cardChipIcon}>
-            <View style={styles.chipBar} />
-            <View style={styles.chipBar} />
-          </View>
-          <Text style={styles.cardTitle}>카드의정석</Text>
-          <Text style={styles.cardSub}>CHECK</Text>
-          <View style={styles.masterMark}>
-            <View style={[styles.circle, { backgroundColor: '#EB001B', marginRight: -10 }]} />
-            <View style={[styles.circle, { backgroundColor: '#F79E1B', opacity: 0.9 }]} />
-          </View>
+          <Image
+            source={require('../../../assets/image 46.png')}
+            style={styles.cardImage}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Menu */}
@@ -180,57 +187,18 @@ const styles = StyleSheet.create({
   cardChipLogo: { width: 48, height: 36 },
 
   cardPreview: {
-    marginTop: 4,
+    marginTop: 40,
     marginHorizontal: 20,
-    backgroundColor: '#BEE3F8',
+    alignItems: 'center',
+  },
+  cardImage: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     borderRadius: 12,
-    height: 170,
-    padding: 16,
-    overflow: 'hidden',
   },
-  wooriLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 1,
-  },
-  cardChipIcon: {
-    width: 36,
-    height: 26,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    marginTop: 18,
-    padding: 4,
-    justifyContent: 'space-between',
-  },
-  chipBar: { height: 3, backgroundColor: '#9CA3AF', borderRadius: 1 },
-  cardTitle: {
-    position: 'absolute',
-    right: 16,
-    top: 70,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  cardSub: {
-    position: 'absolute',
-    right: 16,
-    top: 94,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#EA580C',
-    letterSpacing: 1,
-  },
-  masterMark: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    flexDirection: 'row',
-  },
-  circle: { width: 22, height: 22, borderRadius: 11 },
 
   menuBox: {
-    marginTop: 22,
+    marginTop: 110,
     marginHorizontal: 20,
   },
   menuRow: {
