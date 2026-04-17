@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-
+import { useNavigation } from '@react-navigation/native'; // 검색창 넘어가기
 
 const { width: SW } = Dimensions.get('window');
 const CARD_W = SW * 0.50;
@@ -214,6 +214,7 @@ function TDayCard({ store }) {
 // ── HomeScreen ─────────────────────────────────────────────
 export default function HomeScreen() {
   const { signOut } = useAuth();
+  const navigation = useNavigation(); 
 
   const mascotY     = useRef(new Animated.Value(0)).current;
   const mascotRot   = useRef(new Animated.Value(0)).current;
@@ -338,7 +339,11 @@ export default function HomeScreen() {
           </View>
 
           {/* 검색바 (오른쪽 여백으로 마스코트 공간 확보) */}
-          <TouchableOpacity style={styles.searchBar} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.searchBar}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('SearchScreen')}
+          >
             <Ionicons name="search" size={16} color="#9CA3AF" />
             <Text style={styles.searchText}>나에게 딱맞는 혜택 정보 검색</Text>
           </TouchableOpacity>
@@ -455,7 +460,7 @@ const styles = StyleSheet.create({
   // 인사말 영역 (오른쪽 여백으로 마스코트 공간)
   greetingSection: {
     paddingLeft: 24,
-    paddingRight: 155,
+    paddingRight: 115,
     marginTop: 12,
   },
   greeting: { fontSize: 17, color: '#6B7280', fontWeight: '400' },
@@ -470,7 +475,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
     marginLeft: 20,
-    marginRight: 148,
+    marginRight: 90, // 좀 줄임 148 > 90
     marginTop: 18,
     marginBottom: 20,
     backgroundColor: '#fff',
@@ -488,9 +493,9 @@ const styles = StyleSheet.create({
   mascot: {
     position: 'absolute',
     right: 0,
-    bottom: -30,
-    width: 148,
-    height: 188,
+    bottom: -3,
+    width: 120,
+    height: 150,
   },
 
   // 절약 카드
