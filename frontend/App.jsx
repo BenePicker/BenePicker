@@ -11,13 +11,13 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF9FF' }}>
+        <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
   }
 
-  return <AppNavigator />; // TODO: 개발 완료 후 → token ? <AppNavigator /> : <AuthNavigator />
+  return token ? <AppNavigator /> : <AuthNavigator />;
 }
 
 export default function App() {

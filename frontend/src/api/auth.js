@@ -14,3 +14,6 @@ export const checkNickname = (memberNickname) =>
 
 export const logout = () =>
   apiClient.post('/api/auth/logout');
+
+export const getMyInfo = () =>
+  apiClient.get('/api/member/me');

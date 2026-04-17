@@ -213,8 +213,9 @@ function TDayCard({ store }) {
 
 // ── HomeScreen ─────────────────────────────────────────────
 export default function HomeScreen() {
-  const { signOut } = useAuth();
-  const navigation = useNavigation(); 
+  const { signOut, user } = useAuth();
+  const navigation = useNavigation();
+  const nickname = user?.memberNickname ?? '';
 
   const mascotY     = useRef(new Animated.Value(0)).current;
   const mascotRot   = useRef(new Animated.Value(0)).current;
@@ -329,7 +330,7 @@ export default function HomeScreen() {
           {/* 인사말 + 위치 (오른쪽 여백으로 마스코트 공간 확보) */}
           <View style={styles.greetingSection}>
             <Text style={styles.greeting}>안녕하세요,</Text>
-            <Text style={styles.userName}>김인하님</Text>
+            <Text style={styles.userName}>{nickname}님</Text>
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={16} color="#374151" />
               <Text style={styles.locationText} numberOfLines={1}>
@@ -370,7 +371,7 @@ export default function HomeScreen() {
             {/* 우측 텍스트 + 바 + 금액 */}
             <View style={styles.savingsRight}>
               <Text style={styles.savingsQ}>
-                <Text style={styles.savingsName}>김인하</Text>
+                <Text style={styles.savingsName}>{nickname}</Text>
                 <Text style={styles.savingsQText}> 님이 지금까지 절약한 금액은?</Text>
               </Text>
               <View style={styles.progressTrack}>
