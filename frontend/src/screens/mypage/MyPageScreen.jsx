@@ -7,8 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 const BANKS = [
-  { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF' },
-  { id: 'hana',   label: '하나',  color: '#FFFFFF', bg: '#009490' },
+  { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF', logo: require('../../../assets/logo/won로고.png') },
+  { id: 'hana',   label: '하나',  color: '#FFFFFF', bg: '#FFFFFF', logo: require('../../../assets/logo/하나카드 로고.jpg') },
   { id: 'shinhan', label: '신한', color: '#FFFFFF', bg: '#0046FF' },
   { id: 'kb',     label: 'KB',    color: '#111111', bg: '#FFD500' },
 ];
@@ -67,7 +67,11 @@ export default function MyPageScreen() {
                 selected === b.id && styles.cardChipActive,
               ]}
             >
-              <Text style={[styles.cardChipText, { color: b.color }]}>{b.label}</Text>
+              {b.logo ? (
+                <Image source={b.logo} style={styles.cardChipLogo} resizeMode="contain" />
+              ) : (
+                <Text style={[styles.cardChipText, { color: b.color }]}>{b.label}</Text>
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -173,6 +177,7 @@ const styles = StyleSheet.create({
     borderColor: '#7C3AED',
   },
   cardChipText: { fontSize: 13, fontWeight: '800' },
+  cardChipLogo: { width: 48, height: 36 },
 
   cardPreview: {
     marginTop: 4,
