@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, useWindowDimensions,
-  TextInput, Alert, ActivityIndicator,
+  TextInput, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import { checkNickname, updateProfile } from '../../api/auth';
+import { checkNickname, updateProfile, logout } from '../../api/auth';
 
 const BANKS = [
   { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF', logo: require('../../../assets/logo/won_logo.png') },
@@ -22,7 +22,7 @@ const MENU = ['나의 리뷰 관리', '고객센터', '1:1 문의'];
 
 export default function MyPageScreen() {
   const navigation = useNavigation();
-  const { user, refreshUser, updateLocalProfileImage } = useAuth();
+  const { user, refreshUser, updateLocalProfileImage, signOut } = useAuth();
   const [selected, setSelected] = useState('won');
 
   const { width: winWidth } = useWindowDimensions();
@@ -79,6 +79,29 @@ export default function MyPageScreen() {
     } finally {
       setNickSaving(false);
     }
+  };
+
+  const doLogout = async () => {
+    try {
+      await logout();
+    } catch (_) {
+      // 서버 응답이 실패해도 로컬 토큰은 제거한다
+    } finally {
+      await signOut();
+    }
+  };
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('정말 로그아웃 하시겠어요?')) {
+        doLogout();
+      }
+      return;
+    }
+    Alert.alert('로그아웃', '정말 로그아웃 하시겠어요?', [
+      { text: '취소', style: 'cancel' },
+      { text: '로그아웃', style: 'destructive', onPress: doLogout },
+    ]);
   };
 
   const pickProfileImage = async () => {
@@ -214,6 +237,13 @@ export default function MyPageScreen() {
               <Ionicons name="chevron-forward" size={18} color="#7C3AED" />
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuDivider]}
+            onPress={handleLogout}
+          >
+            <Text style={[styles.menuText, styles.logoutText]}>로그아웃</Text>
+            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -339,4 +369,5 @@ const styles = StyleSheet.create({
     borderTopColor: '#E5E7EB',
   },
   menuText: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  logoutText: { color: '#EF4444' },
 });
