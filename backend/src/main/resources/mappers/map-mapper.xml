@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.benepicker.map.mapper.MapMapper">
+
+    <select id="findNearbyStores" resultType="com.benepicker.map.dto.response.MapMarkerResponse">
+        SELECT
+        s.store_id AS storeId,
+        s.store_name AS storeName,
+        b.brand_name AS brandName,
+        CAST(s.store_lat AS DOUBLE PRECISION) AS storeLat,
+        CAST(s.store_lng AS DOUBLE PRECISION) AS storeLng,
+        s.store_logo_url AS storeLogoUrl,
+        bf.benefit_type AS benefitType,
+        bf.benefit_content AS benefitSummary,
+        CAST(ROUND(CAST(
+        6371 * ACOS(
+        COS(RADIANS(#{lat}))
+        * COS(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        * COS(RADIANS(CAST(s.store_lng AS DOUBLE PRECISION)) - RADIANS(#{lng}))
+        + SIN(RADIANS(#{lat}))
+        * SIN(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        )
+        AS NUMERIC), 2) AS DOUBLE PRECISION) AS distanceKm,
+        CASE
+        WHEN w.wish_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+        END AS wished
+        FROM store s
+        LEFT JOIN brand b
+        ON s.brand_id = b.brand_id
+        LEFT JOIN LATERAL (
+        SELECT
+        bf1.benefit_type,
+        bf1.benefit_content
+        FROM benefit bf1
+        WHERE bf1.store_id = s.store_id
+        AND (
+        (bf1.start_date IS NULL OR bf1.start_date &lt;= CURRENT_DATE)
+        AND (bf1.end_date IS NULL OR bf1.end_date &gt;= CURRENT_DATE)
+        )
+        ORDER BY bf1.created_date DESC
+        LIMIT 1
+        ) bf ON TRUE
+        LEFT JOIN wish w
+        ON w.store_id = s.store_id
+        AND w.member_no = #{memberNo}
+        AND w.wish_type = 'STORE'
+        WHERE s.store_lat IS NOT NULL
+        AND s.store_lng IS NOT NULL
+        AND (
+        6371 * ACOS(
+        COS(RADIANS(#{lat}))
+        * COS(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        * COS(RADIANS(CAST(s.store_lng AS DOUBLE PRECISION)) - RADIANS(#{lng}))
+        + SIN(RADIANS(#{lat}))
+        * SIN(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        )
+        ) &lt;= #{radiusKm}
+        ORDER BY distanceKm ASC
+    </select>
+
+    <select id="findSelectedStoreCard" resultType="com.benepicker.map.dto.response.MapSelectedCardResponse">
+        SELECT
+        s.store_id AS storeId,
+        s.store_name AS storeName,
+        b.brand_name AS brandName,
+        s.store_address AS storeAddress,
+        s.store_image_url AS storeImageUrl,
+        s.store_logo_url AS storeLogoUrl,
+        s.store_app_link AS storeAppLink,
+        CAST(ROUND(CAST(
+        6371 * ACOS(
+        COS(RADIANS(#{lat}))
+        * COS(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        * COS(RADIANS(CAST(s.store_lng AS DOUBLE PRECISION)) - RADIANS(#{lng}))
+        + SIN(RADIANS(#{lat}))
+        * SIN(RADIANS(CAST(s.store_lat AS DOUBLE PRECISION)))
+        )
+        AS NUMERIC), 2) AS DOUBLE PRECISION) AS distanceKm,
+        s.view_count AS viewCount,
+        CASE
+        WHEN w.wish_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+        END AS wished
+        FROM store s
+        LEFT JOIN brand b
+        ON s.brand_id = b.brand_id
+        LEFT JOIN wish w
+        ON w.store_id = s.store_id
+        AND w.member_no = #{memberNo}
+        AND w.wish_type = 'STORE'
+        WHERE s.store_id = #{storeId}
+    </select>
+
+    <select id="findStoreBenefits" resultType="com.benepicker.map.dto.response.MapBenefitResponse">
+        SELECT
+        benefit_id AS benefitId,
+        benefit_type AS benefitType,
+        benefit_content AS benefitContent,
+        benefit_discount AS benefitDiscount,
+        benefit_condition AS benefitCondition,
+        start_date AS startDate,
+        end_date AS endDate
+        FROM benefit
+        WHERE store_id = #{storeId}
+        AND (
+        (start_date IS NULL OR start_date &lt;= CURRENT_DATE)
+        AND (end_date IS NULL OR end_date >= CURRENT_DATE)
+        )
+        ORDER BY created_date DESC
+    </select>
+
+    <update id="increaseViewCount">
+        UPDATE store
+        SET view_count = view_count + 1
+        WHERE store_id = #{storeId}
+    </update>
+
+</mapper>
