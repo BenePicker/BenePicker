@@ -338,7 +338,11 @@ export default function MapScreen() {
     }
     try {
       const res = await getMapData({ lat: INHA_LAT, lng: INHA_LNG, radiusKm: 1, selectedStoreId: storeId });
-      if (res.data?.selectedCard) setSelectedCard(res.data.selectedCard);
+      const sc = res.data?.selectedCard;
+      // 백엔드가 selectedCard를 주더라도 benefits가 비어 있으면 로컬 데이터 유지
+      if (sc && Array.isArray(sc.benefits) && sc.benefits.length > 0) {
+        setSelectedCard(sc);
+      }
     } catch {}
   };
 
