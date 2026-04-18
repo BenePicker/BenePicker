@@ -8,9 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -22,7 +20,6 @@ const PRIMARY = '#7C3AED';
 const INHA_LAT = 37.4513;
 const INHA_LNG = 126.6559;
 
-// 데모용 하드코딩 매장 목록 (인하대 주변 임의 좌표)
 const MOCK_MARKERS = [
   { storeId: 101, storeName: '에그드랍',       brandName: '에그드랍',  storeLat: 37.4516, storeLng: 126.6555, distanceKm: 0.20, benefitSummary: '샌드위치 2,000원 할인', color: '#FFA726' },
   { storeId: 102, storeName: '아리베이글',     brandName: '아리베이글', storeLat: 37.4520, storeLng: 126.6572, distanceKm: 0.25, benefitSummary: '베이글 1+1',          color: '#6D4C41' },
@@ -105,7 +102,7 @@ function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
 
 export default function MapScreen() {
   const navigation = useNavigation();
-  const webViewRef = useRef(null);
+  const iframeRef = useRef(null);
 
   const [markers, setMarkers] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
@@ -116,7 +113,6 @@ export default function MapScreen() {
 
   const translateY = useRef(new Animated.Value(260)).current;
 
-  // 초기 마커 목록 로드 (API 실패/빈 배열 시 MOCK fallback)
   useEffect(() => {
     (async () => {
       try {
@@ -131,7 +127,6 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // 시트 슬라이드
   useEffect(() => {
     Animated.spring(translateY, {
       toValue: selectedStoreId ? 0 : 260,
@@ -141,20 +136,23 @@ export default function MapScreen() {
     }).start();
   }, [selectedStoreId, translateY]);
 
-  // 선택 상태 → WebView에 반영
+  const postToIframe = (cmd, extra = {}) => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    win.postMessage(JSON.stringify({ cmd, ...extra }), '*');
+  };
+
   useEffect(() => {
-    if (!mapReady || !webViewRef.current) return;
-    const js = `window.updateSelected && window.updateSelected(${selectedStoreId ?? 'null'}); true;`;
-    webViewRef.current.injectJavaScript(js);
+    if (!mapReady) return;
+    postToIframe('updateSelected', { storeId: selectedStoreId });
   }, [selectedStoreId, mapReady]);
 
-  // 경로 on/off → WebView에 반영
   useEffect(() => {
-    if (!mapReady || !webViewRef.current) return;
+    if (!mapReady) return;
     if (routeVisible && selectedStoreId != null) {
-      webViewRef.current.injectJavaScript(`window.showRoute && window.showRoute(${selectedStoreId}); true;`);
+      postToIframe('showRoute', { storeId: selectedStoreId });
     } else {
-      webViewRef.current.injectJavaScript(`window.hideRoute && window.hideRoute(); true;`);
+      postToIframe('hideRoute');
     }
   }, [routeVisible, selectedStoreId, mapReady]);
 
@@ -170,7 +168,6 @@ export default function MapScreen() {
   const handleSelectStore = async (storeId) => {
     setSelectedStoreId(storeId);
     setRouteVisible(false);
-    // 우선 로컬 마커 데이터로 시트 채움 (즉시 반응)
     const m = markers.find((x) => x.storeId === storeId);
     if (m) {
       setSelectedCard({
@@ -190,7 +187,6 @@ export default function MapScreen() {
         ],
       });
     }
-    // 백엔드에서 상세 카드 있으면 덮어쓰기 (실패 시 그대로 유지)
     try {
       const res = await getMapData({
         lat: INHA_LAT,
@@ -220,19 +216,22 @@ export default function MapScreen() {
     navigation.navigate('Home', { screen: 'SearchScreen' });
   };
 
-  const onWebViewMessage = (event) => {
-    try {
-      const msg = JSON.parse(event.nativeEvent.data);
-      if (msg.type === 'mapReady') {
-        setMapReady(true);
-      } else if (msg.type === 'markerTap' && msg.storeId != null) {
-        handleSelectStore(msg.storeId);
-      } else if (msg.type === 'error') {
-        console.warn('[KakaoMap]', msg);
-        Alert.alert('지도 오류', `${msg.where}: ${msg.msg}`);
-      }
-    } catch {}
-  };
+  // iframe → 부모 메시지 수신
+  useEffect(() => {
+    function onMessage(event) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      try {
+        const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (msg.type === 'mapReady') {
+          setMapReady(true);
+        } else if (msg.type === 'markerTap' && msg.storeId != null) {
+          handleSelectStore(msg.storeId);
+        }
+      } catch {}
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [markers]);
 
   const headerText = routeVisible && selectedCard
     ? selectedCard.storeName
@@ -240,24 +239,18 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <WebView
-        ref={webViewRef}
-        source={{ html, baseUrl: 'http://localhost' }}
-        originWhitelist={['*']}
-        javaScriptEnabled
-        domStorageEnabled
-        onMessage={onWebViewMessage}
-        onError={(e) => {
-          console.warn('[WebView error]', e.nativeEvent);
-          Alert.alert('WebView 로드 실패', e.nativeEvent.description ?? 'unknown');
+      <iframe
+        ref={iframeRef}
+        srcDoc={html}
+        title="kakao-map"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 'none',
         }}
-        onHttpError={(e) => {
-          console.warn('[WebView http error]', e.nativeEvent);
-        }}
-        style={StyleSheet.absoluteFill}
-        mixedContentMode="always"
-        allowsInlineMediaPlayback
-        androidLayerType="hardware"
       />
 
       <SafeAreaView edges={['top']} style={styles.headerSafe} pointerEvents="box-none">
@@ -315,11 +308,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingLeft: 10,
     paddingRight: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
   },
   searchText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
   mascot: { width: 38, height: 38, marginLeft: 6 },
@@ -340,11 +329,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     flexDirection: 'row',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
+    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
   },
   sheetImage: { width: 130, height: '100%' },
   sheetBody: { flex: 1, padding: 12, justifyContent: 'space-between' },

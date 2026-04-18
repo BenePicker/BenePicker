@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, useWindowDimensions,
+  TextInput, Alert, ActivityIndicator,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../../context/AuthContext';
+import { checkNickname, updateProfile } from '../../api/auth';
 
 const BANKS = [
-  { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF', logo: require('../../../assets/logo/won로고.png') },
-  { id: 'hana',   label: '하나',  color: '#FFFFFF', bg: '#FFFFFF', logo: require('../../../assets/logo/하나카드 로고.jpg') },
+  { id: 'won',    label: 'WON',   color: '#2B6EEB', bg: '#FFFFFF', logo: require('../../../assets/logo/won_logo.png') },
+  { id: 'hana',   label: '하나',  color: '#FFFFFF', bg: '#FFFFFF', logo: require('../../../assets/logo/hana_logo.jpg') },
   { id: 'shinhan', label: '신한', color: '#FFFFFF', bg: '#0046FF' },
   { id: 'kb',     label: 'KB',    color: '#111111', bg: '#FFD500' },
 ];
@@ -17,7 +22,85 @@ const MENU = ['나의 리뷰 관리', '고객센터', '1:1 문의'];
 
 export default function MyPageScreen() {
   const navigation = useNavigation();
+  const { user, refreshUser, updateLocalProfileImage } = useAuth();
   const [selected, setSelected] = useState('won');
+
+  const { width: winWidth } = useWindowDimensions();
+  const cardWidth = Math.min(winWidth, 430) * 0.7;
+  const cardHeight = cardWidth * (41 / 65);
+
+  const nickname = user?.memberNickname ?? '';
+  const email = user?.memberEmail ?? '';
+  const profileImg = user?.profileImageUrl;
+
+  const [editingNick, setEditingNick] = useState(false);
+  const [nickDraft, setNickDraft] = useState('');
+  const [nickSaving, setNickSaving] = useState(false);
+
+  const startEditNick = () => {
+    setNickDraft(nickname);
+    setEditingNick(true);
+  };
+
+  const cancelEditNick = () => {
+    setEditingNick(false);
+    setNickDraft('');
+  };
+
+  const saveNick = async () => {
+    const next = nickDraft.trim();
+    if (!next) {
+      Alert.alert('알림', '닉네임을 입력해주세요.');
+      return;
+    }
+    if (next.length < 2 || next.length > 10) {
+      Alert.alert('알림', '닉네임은 2~10자로 입력해주세요.');
+      return;
+    }
+    if (next === nickname) {
+      cancelEditNick();
+      return;
+    }
+    setNickSaving(true);
+    try {
+      const chk = await checkNickname(next);
+      const available =
+        chk?.data?.available === undefined ? true : chk.data.available === true;
+      if (!available) {
+        Alert.alert('알림', '이미 사용 중인 닉네임이에요.');
+        setNickSaving(false);
+        return;
+      }
+      await updateProfile({ memberNickname: next });
+      await refreshUser();
+      setEditingNick(false);
+    } catch (e) {
+      Alert.alert('변경 실패', e.response?.data?.message ?? '다시 시도해주세요.');
+    } finally {
+      setNickSaving(false);
+    }
+  };
+
+  const pickProfileImage = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('권한 필요', '사진을 선택하려면 갤러리 접근 권한이 필요해요.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      const uri = result.assets?.[0]?.uri;
+      if (uri) await updateLocalProfileImage(uri);
+    } catch (e) {
+      Alert.alert('오류', '사진을 불러오지 못했어요.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -36,14 +119,52 @@ export default function MyPageScreen() {
 
         {/* Profile */}
         <View style={styles.profileRow}>
-          <View style={styles.avatar} />
-          <View style={styles.profileInfo}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>김인하 </Text>
-              <Text style={styles.nameSub}>님</Text>
-              <Text style={styles.tBadge}>T</Text>
+          <TouchableOpacity onPress={pickProfileImage} activeOpacity={0.8}>
+            {profileImg ? (
+              <Image source={{ uri: profileImg }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar} />
+            )}
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={12} color="#FFFFFF" />
             </View>
-            <Text style={styles.email}>iminhastudent@gmail.com</Text>
+          </TouchableOpacity>
+
+          <View style={styles.profileInfo}>
+            {editingNick ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.nickInput}
+                  value={nickDraft}
+                  onChangeText={setNickDraft}
+                  autoFocus
+                  maxLength={10}
+                  placeholder="2~10자"
+                  placeholderTextColor="#9CA3AF"
+                />
+                {nickSaving ? (
+                  <ActivityIndicator color="#7C3AED" style={{ marginLeft: 4 }} />
+                ) : (
+                  <>
+                    <TouchableOpacity onPress={saveNick} hitSlop={6} style={styles.editBtn}>
+                      <Ionicons name="checkmark" size={18} color="#10B981" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={cancelEditNick} hitSlop={6} style={styles.editBtn}>
+                      <Ionicons name="close" size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            ) : (
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{nickname} </Text>
+                <Text style={styles.nameSub}>님</Text>
+                <TouchableOpacity onPress={startEditNick} hitSlop={8} style={styles.pencilBtn}>
+                  <Ionicons name="pencil" size={14} color="#7C3AED" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <Text style={styles.email}>{email}</Text>
           </View>
         </View>
 
@@ -78,17 +199,11 @@ export default function MyPageScreen() {
 
         {/* Card preview */}
         <View style={styles.cardPreview}>
-          <Text style={styles.wooriLabel}>WOORI CARD</Text>
-          <View style={styles.cardChipIcon}>
-            <View style={styles.chipBar} />
-            <View style={styles.chipBar} />
-          </View>
-          <Text style={styles.cardTitle}>카드의정석</Text>
-          <Text style={styles.cardSub}>CHECK</Text>
-          <View style={styles.masterMark}>
-            <View style={[styles.circle, { backgroundColor: '#EB001B', marginRight: -10 }]} />
-            <View style={[styles.circle, { backgroundColor: '#F79E1B', opacity: 0.9 }]} />
-          </View>
+          <Image
+            source={require('../../../assets/image 46.png')}
+            style={[styles.cardImage, { width: cardWidth, height: cardHeight }]}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Menu */}
@@ -135,16 +250,37 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     backgroundColor: '#D1D5DB',
   },
+  cameraBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#7C3AED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FAF9FF',
+  },
   profileInfo: { marginLeft: 14, flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
   name: { fontSize: 17, fontWeight: '700', color: '#111827' },
   nameSub: { fontSize: 14, color: '#111827' },
-  tBadge: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#3B82F6',
+  pencilBtn: { marginLeft: 8, padding: 2 },
+  editRow: { flexDirection: 'row', alignItems: 'center' },
+  nickInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#7C3AED',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 15,
+    color: '#111827',
   },
+  editBtn: { marginLeft: 6, padding: 4 },
+
   email: { fontSize: 12, color: '#6B7280', marginTop: 2 },
 
   sectionLabel: {
@@ -180,57 +316,16 @@ const styles = StyleSheet.create({
   cardChipLogo: { width: 48, height: 36 },
 
   cardPreview: {
-    marginTop: 4,
+    marginTop: 40,
     marginHorizontal: 20,
-    backgroundColor: '#BEE3F8',
+    alignItems: 'center',
+  },
+  cardImage: {
     borderRadius: 12,
-    height: 170,
-    padding: 16,
-    overflow: 'hidden',
   },
-  wooriLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 1,
-  },
-  cardChipIcon: {
-    width: 36,
-    height: 26,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    marginTop: 18,
-    padding: 4,
-    justifyContent: 'space-between',
-  },
-  chipBar: { height: 3, backgroundColor: '#9CA3AF', borderRadius: 1 },
-  cardTitle: {
-    position: 'absolute',
-    right: 16,
-    top: 70,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  cardSub: {
-    position: 'absolute',
-    right: 16,
-    top: 94,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#EA580C',
-    letterSpacing: 1,
-  },
-  masterMark: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    flexDirection: 'row',
-  },
-  circle: { width: 22, height: 22, borderRadius: 11 },
 
   menuBox: {
-    marginTop: 22,
+    marginTop: 110,
     marginHorizontal: 20,
   },
   menuRow: {

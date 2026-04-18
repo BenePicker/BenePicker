@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 
 // 인기 가게 
 const popularStores = [
@@ -30,6 +31,8 @@ const recommendCards = [
 ];
 
 export default function SearchHomeScreen() {
+  const { user } = useAuth();
+  const nickname = user?.memberNickname ?? '';
   const [keyword, setKeyword] = useState('');
   const [recentKeywords, setRecentKeywords] = useState([]);
   const inputRef = useRef(null);
@@ -156,7 +159,7 @@ export default function SearchHomeScreen() {
         </ScrollView>
 
         <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-          김인하님 이 가게는 어때요?
+          {nickname}님 이 가게는 어때요?
         </Text>
 
         <ScrollView

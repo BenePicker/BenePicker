@@ -11,11 +11,11 @@ const M = {
   kp:   require('../../../assets/logo/kp.png'),
   kt:   require('../../../assets/logo/kt.png'),
   sb:   require('../../../assets/logo/sb.png'),
-  baem: require('../../../assets/logo/배민.jpg'),
-  yogi: require('../../../assets/logo/요기요.png'),
-  kakao: require('../../../assets/logo/카카오페이 로고.jpg'),
-  naver: require('../../../assets/logo/네이버페이로고.png'),
-  toss:  require('../../../assets/logo/토스.png'),
+  baem: require('../../../assets/logo/baemin.jpg'),
+  yogi: require('../../../assets/logo/yogiyo.png'),
+  kakao: require('../../../assets/logo/kakaopay_logo.jpg'),
+  naver: require('../../../assets/logo/naverpay_logo.png'),
+  toss:  require('../../../assets/logo/toss.png'),
 };
 
 const MOCK_HISTORY = [
@@ -34,7 +34,7 @@ const MOCK_HISTORY = [
     category: '음식점',
     date: '2025.12.01',
     desc: '매주 수요일/금요일 3천원 할인',
-    logo: require('../../../assets/logo/오븐에 빠진 닭.jpg'),
+    logo: require('../../../assets/logo/oven_chicken.jpg'),
     memberships: [M.baem, M.yogi],
   },
   {
@@ -43,7 +43,7 @@ const MOCK_HISTORY = [
     category: '카페',
     date: '2025.11.19',
     desc: 'T멤버십 고객이라면, 누구나 레디백 1+1',
-    logo: require('../../../assets/logo/베스킨라빈스.png'),
+    logo: require('../../../assets/logo/baskinrobbins.png'),
     memberships: [M.baem, M.yogi, M.ba],
   },
   {
@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
 
   card: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 12,
@@ -179,13 +180,14 @@ const styles = StyleSheet.create({
   thumb: {
     width: 72,
     height: 72,
+    flexShrink: 0,
     borderRadius: 10,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  thumbImg: { width: '100%', height: '100%' },
+  thumbImg: { width: 72, height: 72 },
   thumbFallback: { fontSize: 14, fontWeight: '700', color: '#9CA3AF' },
 
   info: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
