@@ -167,42 +167,28 @@ export default function MapScreen() {
     })
   ), [markers]);
 
-  const handleSelectStore = async (storeId) => {
+  const handleSelectStore = (storeId) => {
     setSelectedStoreId(storeId);
     setRouteVisible(false);
-    // 우선 로컬 마커 데이터로 시트 채움 (즉시 반응)
+    // 하드코딩된 MOCK_MARKERS(또는 API가 채워준 markers) 데이터를 그대로 시트에 표시
     const m = markers.find((x) => x.storeId === storeId);
-    if (m) {
-      setSelectedCard({
-        storeId: m.storeId,
-        storeName: m.storeName,
-        brandName: m.brandName,
-        storeLogoUrl: m.storeLogoUrl,
-        storeImageUrl: m.storeImageUrl ?? null,
-        distanceKm: m.distanceKm,
-        wished: m.wished,
-        benefits: [
-          {
-            benefitContent: m.benefitSummary ?? '혜택 정보 없음',
-            startDate: '2025-11-01',
-            endDate: '2025-11-30',
-          },
-        ],
-      });
-    }
-    // 백엔드가 selectedCard를 주더라도 benefits가 비어 있으면 로컬 데이터 유지
-    try {
-      const res = await getMapData({
-        lat: INHA_LAT,
-        lng: INHA_LNG,
-        radiusKm: 1,
-        selectedStoreId: storeId,
-      });
-      const sc = res.data?.selectedCard;
-      if (sc && Array.isArray(sc.benefits) && sc.benefits.length > 0) {
-        setSelectedCard(sc);
-      }
-    } catch {}
+    if (!m) return;
+    setSelectedCard({
+      storeId: m.storeId,
+      storeName: m.storeName,
+      brandName: m.brandName,
+      storeLogoUrl: m.storeLogoUrl,
+      storeImageUrl: m.storeImageUrl ?? null,
+      distanceKm: m.distanceKm,
+      wished: m.wished,
+      benefits: [
+        {
+          benefitContent: m.benefitSummary ?? '혜택 정보 없음',
+          startDate: '2025-11-01',
+          endDate: '2025-11-30',
+        },
+      ],
+    });
   };
 
   const clearSelection = () => {
