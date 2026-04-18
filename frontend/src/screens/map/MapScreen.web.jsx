@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   View,
   Text,
@@ -6,7 +7,6 @@ import {
   StyleSheet,
   Pressable,
   TouchableOpacity,
-  Animated,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -82,7 +82,7 @@ function loadKakaoSdk(appKey) {
   });
 }
 
-function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
+function BottomSheet({ card, onRouteToggle, routeVisible }) {
   if (!card) return null;
   const firstBenefit = card.benefits?.[0];
   const walkMinutes = card.distanceKm != null
@@ -93,7 +93,7 @@ function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
     : '';
 
   return (
-    <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+    <View style={styles.sheet}>
       {card.storeImageUrl ? (
         <Image source={{ uri: card.storeImageUrl }} style={styles.sheetImage} />
       ) : (
@@ -135,7 +135,7 @@ function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
       <TouchableOpacity style={styles.heartAbs} hitSlop={8}>
         <Ionicons name={card.wished ? 'heart' : 'heart-outline'} size={20} color="#EF4444" />
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -155,8 +155,6 @@ export default function MapScreen() {
   const [mapReady, setMapReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sdkError, setSdkError] = useState(null);
-
-  const translateY = useRef(new Animated.Value(260)).current;
 
   // 마커 데이터 로드
   useEffect(() => {
@@ -238,7 +236,28 @@ export default function MapScreen() {
         pinEl.style.borderColor = m.color;
       }
       pinEl.textContent = (m.brandName || m.storeName || '').slice(0, 4);
-      pinEl.addEventListener('click', () => {
+      pinEl.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        // Kakao 네이티브 DOM 이벤트에서 React 상태 업데이트가 지연되는 문제 방지
+        flushSync(() => {
+          setSelectedStoreId(m.storeId);
+          setRouteVisible(false);
+          setSelectedCard({
+            storeId: m.storeId,
+            storeName: m.storeName,
+            brandName: m.brandName,
+            storeLogoUrl: m.storeLogoUrl,
+            storeImageUrl: m.storeImageUrl ?? null,
+            distanceKm: m.distanceKm,
+            wished: m.wished,
+            benefits: [{
+              benefitContent: m.benefitSummary ?? '혜택 정보 없음',
+              startDate: '2025-11-01',
+              endDate: '2025-11-30',
+            }],
+          });
+        });
+        // 백엔드 상세 카드는 비동기로 덮어쓰기 시도
         handleSelectStore(m.storeId);
       });
 
@@ -293,40 +312,11 @@ export default function MapScreen() {
     }
   }, [routeVisible, selectedStoreId, mapReady]);
 
-  // 시트 애니메이션 (웹은 native driver 미지원)
-  useEffect(() => {
-    Animated.spring(translateY, {
-      toValue: selectedStoreId ? 0 : 260,
-      useNativeDriver: false,
-      tension: 60,
-      friction: 11,
-    }).start();
-  }, [selectedStoreId, translateY]);
-
+  // 백엔드 상세 카드 비동기 조회 (클릭 핸들러에서 이미 로컬 데이터로 시트는 표시됨)
   const handleSelectStore = async (storeId) => {
-    setSelectedStoreId(storeId);
-    setRouteVisible(false);
-    const m = markers.find((x) => x.storeId === storeId);
-    if (m) {
-      setSelectedCard({
-        storeId: m.storeId,
-        storeName: m.storeName,
-        brandName: m.brandName,
-        storeLogoUrl: m.storeLogoUrl,
-        storeImageUrl: m.storeImageUrl ?? null,
-        distanceKm: m.distanceKm,
-        wished: m.wished,
-        benefits: [{
-          benefitContent: m.benefitSummary ?? '혜택 정보 없음',
-          startDate: '2025-11-01',
-          endDate: '2025-11-30',
-        }],
-      });
-    }
     try {
       const res = await getMapData({ lat: INHA_LAT, lng: INHA_LNG, radiusKm: 1, selectedStoreId: storeId });
       const sc = res.data?.selectedCard;
-      // 백엔드가 selectedCard를 주더라도 benefits가 비어 있으면 로컬 데이터 유지
       if (sc && Array.isArray(sc.benefits) && sc.benefits.length > 0) {
         setSelectedCard(sc);
       }
@@ -395,7 +385,6 @@ export default function MapScreen() {
 
       <BottomSheet
         card={selectedCard}
-        translateY={translateY}
         onRouteToggle={() => setRouteVisible((v) => !v)}
         routeVisible={routeVisible}
       />
