@@ -29,6 +29,13 @@ const EMAIL_RE = /^[\w.+-]+@[\w-]+\.[\w.-]+$/;
 const PW_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 const TEL_RE = /^01\d{8,9}$/;
 
+const CARRIERS = [
+  { id: 'SKT', label: 'SKT' },
+  { id: 'KT', label: 'KT' },
+  { id: 'LGU', label: 'LG U+' },
+  { id: 'MVNO', label: '알뜰폰' },
+];
+
 const isAvailable = (res) => {
   const d = res?.data;
   if (d == null) return true;
@@ -46,6 +53,7 @@ export default function SignupScreen({ navigation }) {
   const [memberPw2, setMemberPw2] = useState('');
   const [memberNickname, setMemberNickname] = useState('');
   const [memberTel, setMemberTel] = useState('');
+  const [memberCarrier, setMemberCarrier] = useState(null);
 
   const [pwVisible, setPwVisible] = useState(false);
   const [pw2Visible, setPw2Visible] = useState(false);
@@ -60,8 +68,9 @@ export default function SignupScreen({ navigation }) {
 
   const pwValid = PW_RE.test(memberPw);
   const pwMatch = memberPw.length > 0 && memberPw === memberPw2;
-  const telValid = memberTel === '' || TEL_RE.test(memberTel);
+  const telValid = TEL_RE.test(memberTel);
   const nickLenValid = memberNickname.length >= 2 && memberNickname.length <= 10;
+  const carrierValid = !!memberCarrier;
 
   const canSubmit = useMemo(() => {
     return (
@@ -70,11 +79,12 @@ export default function SignupScreen({ navigation }) {
       pwMatch &&
       nickLenValid &&
       telValid &&
+      carrierValid &&
       checkedEmail === memberEmail.trim() &&
       checkedNickname === memberNickname.trim() &&
       !loading
     );
-  }, [memberEmail, pwValid, pwMatch, nickLenValid, telValid, checkedEmail, checkedNickname, memberNickname, loading]);
+  }, [memberEmail, pwValid, pwMatch, nickLenValid, telValid, carrierValid, checkedEmail, checkedNickname, memberNickname, loading]);
 
   const handleCheckEmail = async () => {
     const email = memberEmail.trim();
@@ -142,8 +152,9 @@ export default function SignupScreen({ navigation }) {
         memberEmail: memberEmail.trim(),
         memberPw,
         memberNickname: memberNickname.trim(),
+        memberTel: memberTel.trim(),
+        memberCarrier,
       };
-      if (memberTel.trim()) payload.memberTel = memberTel.trim();
       await signup(payload);
       try {
         const res = await login({ memberEmail: payload.memberEmail, memberPw });
@@ -350,7 +361,26 @@ export default function SignupScreen({ navigation }) {
             </View>
           )}
 
-          <Text style={[styles.label, { marginTop: 18 }]}>전화번호 (선택)</Text>
+          <Text style={[styles.label, { marginTop: 18 }]}>통신사</Text>
+          <View style={styles.carrierRow}>
+            {CARRIERS.map((c) => {
+              const active = memberCarrier === c.id;
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => setMemberCarrier(c.id)}
+                  style={[styles.carrierChip, active && styles.carrierChipActive]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.carrierText, active && styles.carrierTextActive]}>
+                    {c.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={[styles.label, { marginTop: 18 }]}>전화번호</Text>
           <View style={[styles.field, focus === 'tel' && styles.fieldFocused]}>
             <Ionicons name="call-outline" size={18} color={SUB} />
             <TextInput
@@ -498,4 +528,25 @@ const styles = StyleSheet.create({
   },
   loginPrompt: { fontSize: 13, color: SUB },
   loginLink: { fontSize: 13, fontWeight: '700', color: PRIMARY },
+
+  carrierRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  carrierChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carrierChipActive: {
+    borderColor: PRIMARY,
+    backgroundColor: '#F5F3FF',
+  },
+  carrierText: { fontSize: 13, fontWeight: '600', color: SUB },
+  carrierTextActive: { color: PRIMARY, fontWeight: '700' },
 });
