@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   StatusBar,
   Pressable,
   Image,
@@ -14,10 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native'; // 검색창 넘어가기
 
-
-const { width: SW } = Dimensions.get('window');
-const CARD_W = SW * 0.50;
 const PURPLE = '#7C3AED';
 const CARD_BG = '#6200EA'; // 밝은 보라
 const SAVINGS = 13700;
@@ -98,7 +96,7 @@ const TDAY_STORES = [
 ];
 
 // ── StoreCard ──────────────────────────────────────────────
-function StoreCard({ store, isLiked, onToggleLike }) {
+function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
   const pressScale = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
@@ -116,7 +114,7 @@ function StoreCard({ store, isLiked, onToggleLike }) {
   };
 
   return (
-    <Animated.View style={[styles.storeCard, { transform: [{ scale: pressScale }] }]}>
+    <Animated.View style={[styles.storeCard, { width: cardWidth, transform: [{ scale: pressScale }] }]}>
       <Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
         {/* 매장 이미지 영역 */}
         <View style={[styles.storeImgArea, { backgroundColor: store.bgColor }]}>
@@ -213,7 +211,12 @@ function TDayCard({ store }) {
 
 // ── HomeScreen ─────────────────────────────────────────────
 export default function HomeScreen() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const navigation = useNavigation();
+  const nickname = user?.memberNickname ?? '';
+
+  const { width: winWidth } = useWindowDimensions();
+  const cardWidth = Math.min(winWidth, 430) * 0.50;
 
   const mascotY     = useRef(new Animated.Value(0)).current;
   const mascotRot   = useRef(new Animated.Value(0)).current;
@@ -328,7 +331,7 @@ export default function HomeScreen() {
           {/* 인사말 + 위치 (오른쪽 여백으로 마스코트 공간 확보) */}
           <View style={styles.greetingSection}>
             <Text style={styles.greeting}>안녕하세요,</Text>
-            <Text style={styles.userName}>김인하님</Text>
+            <Text style={styles.userName}>{nickname}님</Text>
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={16} color="#374151" />
               <Text style={styles.locationText} numberOfLines={1}>
@@ -338,7 +341,11 @@ export default function HomeScreen() {
           </View>
 
           {/* 검색바 (오른쪽 여백으로 마스코트 공간 확보) */}
-          <TouchableOpacity style={styles.searchBar} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.searchBar}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('SearchScreen')}
+          >
             <Ionicons name="search" size={16} color="#9CA3AF" />
             <Text style={styles.searchText}>나에게 딱맞는 혜택 정보 검색</Text>
           </TouchableOpacity>
@@ -365,7 +372,7 @@ export default function HomeScreen() {
             {/* 우측 텍스트 + 바 + 금액 */}
             <View style={styles.savingsRight}>
               <Text style={styles.savingsQ}>
-                <Text style={styles.savingsName}>김인하</Text>
+                <Text style={styles.savingsName}>{nickname}</Text>
                 <Text style={styles.savingsQText}> 님이 지금까지 절약한 금액은?</Text>
               </Text>
               <View style={styles.progressTrack}>
@@ -394,6 +401,7 @@ export default function HomeScreen() {
                 store={store}
                 isLiked={likedIds.has(store.id)}
                 onToggleLike={() => toggleLike(store.id)}
+                cardWidth={cardWidth}
               />
             ))}
           </ScrollView>
@@ -455,7 +463,7 @@ const styles = StyleSheet.create({
   // 인사말 영역 (오른쪽 여백으로 마스코트 공간)
   greetingSection: {
     paddingLeft: 24,
-    paddingRight: 155,
+    paddingRight: 115,
     marginTop: 12,
   },
   greeting: { fontSize: 17, color: '#6B7280', fontWeight: '400' },
@@ -470,7 +478,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
     marginLeft: 20,
-    marginRight: 148,
+    marginRight: 90, // 좀 줄임 148 > 90
     marginTop: 18,
     marginBottom: 20,
     backgroundColor: '#fff',
@@ -488,9 +496,9 @@ const styles = StyleSheet.create({
   mascot: {
     position: 'absolute',
     right: 0,
-    bottom: -30,
-    width: 148,
-    height: 188,
+    bottom: -3,
+    width: 120,
+    height: 150,
   },
 
   // 절약 카드
@@ -528,7 +536,7 @@ const styles = StyleSheet.create({
   // 가게 카드
   storeScroll: { paddingLeft: 20, paddingRight: 8, gap: 10 },
   storeCard: {
-    width: CARD_W, backgroundColor: '#fff', borderRadius: 14,
+    backgroundColor: '#fff', borderRadius: 14,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

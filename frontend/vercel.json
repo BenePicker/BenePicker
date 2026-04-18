@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": null,
+  "rewrites": [
+    { "source": "/proxy/:path*", "destination": "http://54.253.35.160:8080/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
