@@ -188,6 +188,10 @@ export default function MapScreen() {
           center: new kakao.maps.LatLng(INHA_LAT, INHA_LNG),
           level: 3,
         });
+        // 과도한 확대로 Kakao POI 라벨이 거대해지는 것 방지
+        // (Kakao 줌 레벨은 역순: 숫자 작을수록 확대. 3을 최소값으로)
+        map.setMinLevel(3);
+        map.setMaxLevel(8);
         mapRef.current = map;
 
         // 현재 위치 점
