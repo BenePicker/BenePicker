@@ -4,6 +4,6 @@ import { Platform } from 'react-native';
 // 네이티브: 백엔드 IP로 직접 요청
 const API_BASE_URL = Platform.OS === 'web'
   ? '/proxy'
-  : 'http://54.253.35.160:8080';
+  : 'http://43.203.64.160:8080';
 
 export default API_BASE_URL;

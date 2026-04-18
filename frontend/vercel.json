@@ -4,7 +4,7 @@
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
-    { "source": "/proxy/:path*", "destination": "http://54.253.35.160:8080/:path*" },
+    { "source": "/proxy/:path*", "destination": "http://43.203.64.160:8080/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
