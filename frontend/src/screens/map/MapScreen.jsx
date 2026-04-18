@@ -190,7 +190,7 @@ export default function MapScreen() {
         ],
       });
     }
-    // 백엔드에서 상세 카드 있으면 덮어쓰기 (실패 시 그대로 유지)
+    // 백엔드가 selectedCard를 주더라도 benefits가 비어 있으면 로컬 데이터 유지
     try {
       const res = await getMapData({
         lat: INHA_LAT,
@@ -198,7 +198,10 @@ export default function MapScreen() {
         radiusKm: 1,
         selectedStoreId: storeId,
       });
-      if (res.data?.selectedCard) setSelectedCard(res.data.selectedCard);
+      const sc = res.data?.selectedCard;
+      if (sc && Array.isArray(sc.benefits) && sc.benefits.length > 0) {
+        setSelectedCard(sc);
+      }
     } catch {}
   };
 
