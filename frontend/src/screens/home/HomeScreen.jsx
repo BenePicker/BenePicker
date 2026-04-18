@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   StatusBar,
   Pressable,
   Image,
@@ -16,8 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native'; // 검색창 넘어가기
 
-const { width: SW } = Dimensions.get('window');
-const CARD_W = SW * 0.50;
 const PURPLE = '#7C3AED';
 const CARD_BG = '#6200EA'; // 밝은 보라
 const SAVINGS = 13700;
@@ -98,7 +96,7 @@ const TDAY_STORES = [
 ];
 
 // ── StoreCard ──────────────────────────────────────────────
-function StoreCard({ store, isLiked, onToggleLike }) {
+function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
   const pressScale = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
@@ -116,7 +114,7 @@ function StoreCard({ store, isLiked, onToggleLike }) {
   };
 
   return (
-    <Animated.View style={[styles.storeCard, { transform: [{ scale: pressScale }] }]}>
+    <Animated.View style={[styles.storeCard, { width: cardWidth, transform: [{ scale: pressScale }] }]}>
       <Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
         {/* 매장 이미지 영역 */}
         <View style={[styles.storeImgArea, { backgroundColor: store.bgColor }]}>
@@ -216,6 +214,9 @@ export default function HomeScreen() {
   const { signOut, user } = useAuth();
   const navigation = useNavigation();
   const nickname = user?.memberNickname ?? '';
+
+  const { width: winWidth } = useWindowDimensions();
+  const cardWidth = Math.min(winWidth, 430) * 0.50;
 
   const mascotY     = useRef(new Animated.Value(0)).current;
   const mascotRot   = useRef(new Animated.Value(0)).current;
@@ -400,6 +401,7 @@ export default function HomeScreen() {
                 store={store}
                 isLiked={likedIds.has(store.id)}
                 onToggleLike={() => toggleLike(store.id)}
+                cardWidth={cardWidth}
               />
             ))}
           </ScrollView>
@@ -534,7 +536,7 @@ const styles = StyleSheet.create({
   // 가게 카드
   storeScroll: { paddingLeft: 20, paddingRight: 8, gap: 10 },
   storeCard: {
-    width: CARD_W, backgroundColor: '#fff', borderRadius: 14,
+    backgroundColor: '#fff', borderRadius: 14,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

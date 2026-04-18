@@ -22,13 +22,31 @@
         "backgroundImage": "./assets/app/android-icon-background.png",
         "monochromeImage": "./assets/app/android-icon-monochrome.png"
       },
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/app/favicon.png"
     },
     "plugins": [
-      "expo-asset"
-    ]
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3893a9f4-5823-453b-aab5-454562fe119e"
+      }
+    },
+    "owner": "chochanglae"
   }
 }

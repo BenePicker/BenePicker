@@ -17,3 +17,12 @@ export const logout = () =>
 
 export const getMyInfo = () =>
   apiClient.get('/api/member/me');
+
+export const updateProfile = (data) =>
+  apiClient.patch('/api/member/me/profile', data);
+
+export const updatePassword = ({ currentPassword, newPassword }) =>
+  apiClient.patch('/api/member/me/password', { currentPassword, newPassword });
+
+export const updatePrivacy = (data) =>
+  apiClient.patch('/api/member/me/privacy', data);
