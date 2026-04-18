@@ -147,6 +147,7 @@ export default function MapScreen() {
   const markerObjsRef = useRef({});
   const routePolyRef = useRef(null);
   const selectedIdRef = useRef(null);
+  const markersRef = useRef([]);
 
   const [markers, setMarkers] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
@@ -203,6 +204,36 @@ export default function MapScreen() {
           zIndex: 2,
         }).setMap(map);
 
+        // 이벤트 위임: 지도 컨테이너에서 핀 클릭을 포착 (Kakao 래퍼 무시하고 확실히 동작)
+        container.addEventListener('click', (ev) => {
+          const el = ev.target && ev.target.closest
+            ? ev.target.closest('[data-bp-store]')
+            : null;
+          if (!el) return;
+          const storeId = parseInt(el.dataset.bpStore, 10);
+          if (Number.isNaN(storeId)) return;
+          const m = markersRef.current.find((x) => x.storeId === storeId);
+          if (!m) return;
+          flushSync(() => {
+            setSelectedStoreId(storeId);
+            setRouteVisible(false);
+            setSelectedCard({
+              storeId: m.storeId,
+              storeName: m.storeName,
+              brandName: m.brandName,
+              storeLogoUrl: m.storeLogoUrl,
+              storeImageUrl: m.storeImageUrl ?? null,
+              distanceKm: m.distanceKm,
+              wished: m.wished,
+              benefits: [{
+                benefitContent: m.benefitSummary ?? '혜택 정보 없음',
+                startDate: '2025-11-01',
+                endDate: '2025-11-30',
+              }],
+            });
+          });
+        });
+
         setMapReady(true);
       } catch (e) {
         setSdkError(e?.message ?? '지도 SDK를 불러오지 못했습니다. 카카오 콘솔에 도메인 등록을 확인해주세요.');
@@ -210,6 +241,9 @@ export default function MapScreen() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // markers 를 delegation 핸들러가 참조할 수 있도록 ref에 동기화
+  useEffect(() => { markersRef.current = markers; }, [markers]);
 
   // markers 변경 시 핀 렌더
   useEffect(() => {
@@ -236,30 +270,7 @@ export default function MapScreen() {
         pinEl.style.borderColor = m.color;
       }
       pinEl.textContent = (m.brandName || m.storeName || '').slice(0, 4);
-      pinEl.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        // Kakao 네이티브 DOM 이벤트에서 React 상태 업데이트가 지연되는 문제 방지
-        flushSync(() => {
-          setSelectedStoreId(m.storeId);
-          setRouteVisible(false);
-          setSelectedCard({
-            storeId: m.storeId,
-            storeName: m.storeName,
-            brandName: m.brandName,
-            storeLogoUrl: m.storeLogoUrl,
-            storeImageUrl: m.storeImageUrl ?? null,
-            distanceKm: m.distanceKm,
-            wished: m.wished,
-            benefits: [{
-              benefitContent: m.benefitSummary ?? '혜택 정보 없음',
-              startDate: '2025-11-01',
-              endDate: '2025-11-30',
-            }],
-          });
-        });
-        // 백엔드 상세 카드는 비동기로 덮어쓰기 시도
-        handleSelectStore(m.storeId);
-      });
+      pinEl.dataset.bpStore = String(m.storeId);
 
       const pinOverlay = new kakao.maps.CustomOverlay({
         position: pos,
@@ -311,17 +322,6 @@ export default function MapScreen() {
       routePolyRef.current = poly;
     }
   }, [routeVisible, selectedStoreId, mapReady]);
-
-  // 백엔드 상세 카드 비동기 조회 (클릭 핸들러에서 이미 로컬 데이터로 시트는 표시됨)
-  const handleSelectStore = async (storeId) => {
-    try {
-      const res = await getMapData({ lat: INHA_LAT, lng: INHA_LNG, radiusKm: 1, selectedStoreId: storeId });
-      const sc = res.data?.selectedCard;
-      if (sc && Array.isArray(sc.benefits) && sc.benefits.length > 0) {
-        setSelectedCard(sc);
-      }
-    } catch {}
-  };
 
   const clearSelection = () => {
     setSelectedStoreId(null);
