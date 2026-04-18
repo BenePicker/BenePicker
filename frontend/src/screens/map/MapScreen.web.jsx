@@ -47,12 +47,6 @@ const PIN_STYLE = `
     line-height: 1.1; cursor: pointer;
   }
   .bp-pin.selected { width: 56px; height: 56px; border-radius: 28px; border-width: 4px; border-color: #7C3AED; }
-  .bp-label {
-    display: inline-block; padding: 2px 6px; background: transparent;
-    color: #111827; font-size: 11px; font-weight: 700;
-    transform: translate(-50%, 26px); white-space: nowrap;
-    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
-  }
 `;
 
 function injectStyleOnce() {
@@ -225,7 +219,6 @@ export default function MapScreen() {
     // 기존 마커 제거
     Object.values(markerObjsRef.current).forEach((m) => {
       m.pinOverlay.setMap(null);
-      m.label.setMap(null);
     });
     markerObjsRef.current = {};
 
@@ -251,21 +244,11 @@ export default function MapScreen() {
         xAnchor: 0.5,
         yAnchor: 0.5,
         zIndex: 3,
+        clickable: true,
       });
       pinOverlay.setMap(map);
 
-      const labelEl = document.createElement('div');
-      labelEl.className = 'bp-label';
-      labelEl.textContent = m.storeName || m.brandName || '';
-      const label = new kakao.maps.CustomOverlay({
-        position: pos,
-        content: labelEl,
-        yAnchor: 0,
-        zIndex: 4,
-      });
-      label.setMap(map);
-
-      markerObjsRef.current[m.storeId] = { pinEl, pinOverlay, label, labelEl, pos };
+      markerObjsRef.current[m.storeId] = { pinEl, pinOverlay, pos };
     });
   }, [mapReady, markers]);
 
@@ -306,11 +289,11 @@ export default function MapScreen() {
     }
   }, [routeVisible, selectedStoreId, mapReady]);
 
-  // 시트 애니메이션
+  // 시트 애니메이션 (웹은 native driver 미지원)
   useEffect(() => {
     Animated.spring(translateY, {
       toValue: selectedStoreId ? 0 : 260,
-      useNativeDriver: true,
+      useNativeDriver: false,
       tension: 60,
       friction: 11,
     }).start();
