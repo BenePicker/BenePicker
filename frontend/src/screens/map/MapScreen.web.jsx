@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { getMapData } from '../../api/map';
 import { KAKAO_JS_KEY } from '../../constants/kakao';
-import { buildKakaoMapHtml } from './kakaoMapHtml';
 
 const PRIMARY = '#7C3AED';
 const INHA_LAT = 37.4513;
@@ -34,6 +33,60 @@ const MOCK_MARKERS = [
   { storeId: 111, storeName: '삼청당',         brandName: '삼청당',    storeLat: 37.4521, storeLng: 126.6566, distanceKm: 0.38, benefitSummary: '정식 1,000원 할인',  color: '#D84315' },
   { storeId: 112, storeName: '허수아비',       brandName: '허수아비',  storeLat: 37.4522, storeLng: 126.6572, distanceKm: 0.42, benefitSummary: '비빔밥 10% 할인',    color: '#E65100' },
 ];
+
+const PIN_STYLE = `
+  .bp-cur-dot { width: 18px; height: 18px; background: #EF4444; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  .bp-pin {
+    width: 44px; height: 44px; border-radius: 22px;
+    background: #fff; border: 2.5px solid #E5E7EB;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    color: #111827; font-size: 10px; font-weight: 800;
+    text-align: center; padding: 2px; box-sizing: border-box;
+    line-height: 1.1; cursor: pointer;
+  }
+  .bp-pin.selected { width: 56px; height: 56px; border-radius: 28px; border-width: 4px; border-color: #7C3AED; }
+  .bp-label {
+    display: inline-block; padding: 2px 6px; background: transparent;
+    color: #111827; font-size: 11px; font-weight: 700;
+    transform: translate(-50%, 26px); white-space: nowrap;
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+  }
+`;
+
+function injectStyleOnce() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('bp-map-style')) return;
+  const el = document.createElement('style');
+  el.id = 'bp-map-style';
+  el.textContent = PIN_STYLE;
+  document.head.appendChild(el);
+}
+
+function loadKakaoSdk(appKey) {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') return reject(new Error('no window'));
+    if (window.kakao && window.kakao.maps) {
+      window.kakao.maps.load(resolve);
+      return;
+    }
+    const existing = document.getElementById('bp-kakao-sdk');
+    const onLoad = () => window.kakao.maps.load(resolve);
+    if (existing) {
+      existing.addEventListener('load', onLoad);
+      existing.addEventListener('error', reject);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'bp-kakao-sdk';
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
+    script.async = true;
+    script.onload = onLoad;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
 function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
   if (!card) return null;
@@ -81,20 +134,12 @@ function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
             </View>
           </View>
           <TouchableOpacity onPress={onRouteToggle} style={styles.routeBtn} activeOpacity={0.8}>
-            <Ionicons
-              name={routeVisible ? 'close' : 'paper-plane'}
-              size={18}
-              color={PRIMARY}
-            />
+            <Ionicons name={routeVisible ? 'close' : 'paper-plane'} size={18} color={PRIMARY} />
           </TouchableOpacity>
         </View>
       </View>
       <TouchableOpacity style={styles.heartAbs} hitSlop={8}>
-        <Ionicons
-          name={card.wished ? 'heart' : 'heart-outline'}
-          size={20}
-          color="#EF4444"
-        />
+        <Ionicons name={card.wished ? 'heart' : 'heart-outline'} size={20} color="#EF4444" />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -102,7 +147,12 @@ function BottomSheet({ card, translateY, onRouteToggle, routeVisible }) {
 
 export default function MapScreen() {
   const navigation = useNavigation();
-  const iframeRef = useRef(null);
+
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markerObjsRef = useRef({});
+  const routePolyRef = useRef(null);
+  const selectedIdRef = useRef(null);
 
   const [markers, setMarkers] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
@@ -110,16 +160,18 @@ export default function MapScreen() {
   const [routeVisible, setRouteVisible] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sdkError, setSdkError] = useState(null);
 
   const translateY = useRef(new Animated.Value(260)).current;
 
+  // 마커 데이터 로드
   useEffect(() => {
     (async () => {
       try {
         const res = await getMapData({ lat: INHA_LAT, lng: INHA_LNG, radiusKm: 1 });
         const apiMarkers = res.data?.markers ?? [];
         setMarkers(apiMarkers.length > 0 ? apiMarkers : MOCK_MARKERS);
-      } catch (e) {
+      } catch {
         setMarkers(MOCK_MARKERS);
       } finally {
         setLoading(false);
@@ -127,6 +179,134 @@ export default function MapScreen() {
     })();
   }, []);
 
+  // 카카오 SDK + 지도 초기화
+  useEffect(() => {
+    injectStyleOnce();
+    let cancelled = false;
+    (async () => {
+      try {
+        await loadKakaoSdk(KAKAO_JS_KEY);
+        if (cancelled) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const kakao = window.kakao;
+        const map = new kakao.maps.Map(container, {
+          center: new kakao.maps.LatLng(INHA_LAT, INHA_LNG),
+          level: 3,
+        });
+        mapRef.current = map;
+
+        // 현재 위치 점
+        const curEl = document.createElement('div');
+        curEl.className = 'bp-cur-dot';
+        new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(INHA_LAT, INHA_LNG),
+          content: curEl,
+          xAnchor: 0.5,
+          yAnchor: 0.5,
+          zIndex: 2,
+        }).setMap(map);
+
+        setMapReady(true);
+      } catch (e) {
+        setSdkError(e?.message ?? '지도 SDK를 불러오지 못했습니다. 카카오 콘솔에 도메인 등록을 확인해주세요.');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // markers 변경 시 핀 렌더
+  useEffect(() => {
+    if (!mapReady) return;
+    const kakao = window.kakao;
+    const map = mapRef.current;
+    if (!map || !kakao) return;
+
+    // 기존 마커 제거
+    Object.values(markerObjsRef.current).forEach((m) => {
+      m.pinOverlay.setMap(null);
+      m.label.setMap(null);
+    });
+    markerObjsRef.current = {};
+
+    markers.forEach((m) => {
+      if (m.storeLat == null || m.storeLng == null) return;
+      const pos = new kakao.maps.LatLng(m.storeLat, m.storeLng);
+
+      const pinEl = document.createElement('div');
+      pinEl.className = 'bp-pin';
+      if (m.color) {
+        pinEl.style.background = m.color;
+        pinEl.style.color = '#fff';
+        pinEl.style.borderColor = m.color;
+      }
+      pinEl.textContent = (m.brandName || m.storeName || '').slice(0, 4);
+      pinEl.addEventListener('click', () => {
+        handleSelectStore(m.storeId);
+      });
+
+      const pinOverlay = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: pinEl,
+        xAnchor: 0.5,
+        yAnchor: 0.5,
+        zIndex: 3,
+      });
+      pinOverlay.setMap(map);
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'bp-label';
+      labelEl.textContent = m.storeName || m.brandName || '';
+      const label = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: labelEl,
+        yAnchor: 0,
+        zIndex: 4,
+      });
+      label.setMap(map);
+
+      markerObjsRef.current[m.storeId] = { pinEl, pinOverlay, label, labelEl, pos };
+    });
+  }, [mapReady, markers]);
+
+  // 선택 상태 반영
+  useEffect(() => {
+    if (!mapReady) return;
+    const prev = selectedIdRef.current;
+    if (prev != null && markerObjsRef.current[prev]) {
+      markerObjsRef.current[prev].pinEl.classList.remove('selected');
+    }
+    selectedIdRef.current = selectedStoreId;
+    if (selectedStoreId != null && markerObjsRef.current[selectedStoreId]) {
+      markerObjsRef.current[selectedStoreId].pinEl.classList.add('selected');
+      mapRef.current.panTo(markerObjsRef.current[selectedStoreId].pos);
+    }
+  }, [selectedStoreId, mapReady]);
+
+  // 경로 표시
+  useEffect(() => {
+    if (!mapReady) return;
+    const kakao = window.kakao;
+    if (routePolyRef.current) {
+      routePolyRef.current.setMap(null);
+      routePolyRef.current = null;
+    }
+    if (routeVisible && selectedStoreId != null && markerObjsRef.current[selectedStoreId]) {
+      const target = markerObjsRef.current[selectedStoreId].pos;
+      const path = [new kakao.maps.LatLng(INHA_LAT, INHA_LNG), target];
+      const poly = new kakao.maps.Polyline({
+        path,
+        strokeWeight: 6,
+        strokeColor: PRIMARY,
+        strokeOpacity: 0.9,
+        strokeStyle: 'solid',
+      });
+      poly.setMap(mapRef.current);
+      routePolyRef.current = poly;
+    }
+  }, [routeVisible, selectedStoreId, mapReady]);
+
+  // 시트 애니메이션
   useEffect(() => {
     Animated.spring(translateY, {
       toValue: selectedStoreId ? 0 : 260,
@@ -135,35 +315,6 @@ export default function MapScreen() {
       friction: 11,
     }).start();
   }, [selectedStoreId, translateY]);
-
-  const postToIframe = (cmd, extra = {}) => {
-    const win = iframeRef.current?.contentWindow;
-    if (!win) return;
-    win.postMessage(JSON.stringify({ cmd, ...extra }), '*');
-  };
-
-  useEffect(() => {
-    if (!mapReady) return;
-    postToIframe('updateSelected', { storeId: selectedStoreId });
-  }, [selectedStoreId, mapReady]);
-
-  useEffect(() => {
-    if (!mapReady) return;
-    if (routeVisible && selectedStoreId != null) {
-      postToIframe('showRoute', { storeId: selectedStoreId });
-    } else {
-      postToIframe('hideRoute');
-    }
-  }, [routeVisible, selectedStoreId, mapReady]);
-
-  const html = useMemo(() => (
-    buildKakaoMapHtml({
-      appKey: KAKAO_JS_KEY,
-      centerLat: INHA_LAT,
-      centerLng: INHA_LNG,
-      markers,
-    })
-  ), [markers]);
 
   const handleSelectStore = async (storeId) => {
     setSelectedStoreId(storeId);
@@ -178,22 +329,15 @@ export default function MapScreen() {
         storeImageUrl: m.storeImageUrl ?? null,
         distanceKm: m.distanceKm,
         wished: m.wished,
-        benefits: [
-          {
-            benefitContent: m.benefitSummary ?? '혜택 정보 없음',
-            startDate: '2025-11-01',
-            endDate: '2025-11-30',
-          },
-        ],
+        benefits: [{
+          benefitContent: m.benefitSummary ?? '혜택 정보 없음',
+          startDate: '2025-11-01',
+          endDate: '2025-11-30',
+        }],
       });
     }
     try {
-      const res = await getMapData({
-        lat: INHA_LAT,
-        lng: INHA_LNG,
-        radiusKm: 1,
-        selectedStoreId: storeId,
-      });
+      const res = await getMapData({ lat: INHA_LAT, lng: INHA_LNG, radiusKm: 1, selectedStoreId: storeId });
       if (res.data?.selectedCard) setSelectedCard(res.data.selectedCard);
     } catch {}
   };
@@ -205,33 +349,9 @@ export default function MapScreen() {
   };
 
   const handleBack = () => {
-    if (selectedStoreId) {
-      clearSelection();
-    } else if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    if (selectedStoreId) clearSelection();
+    else if (navigation.canGoBack()) navigation.goBack();
   };
-
-  const handleSearchTap = () => {
-    navigation.navigate('Home', { screen: 'SearchScreen' });
-  };
-
-  // iframe → 부모 메시지 수신
-  useEffect(() => {
-    function onMessage(event) {
-      if (event.source !== iframeRef.current?.contentWindow) return;
-      try {
-        const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (msg.type === 'mapReady') {
-          setMapReady(true);
-        } else if (msg.type === 'markerTap' && msg.storeId != null) {
-          handleSelectStore(msg.storeId);
-        }
-      } catch {}
-    }
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [markers]);
 
   const headerText = routeVisible && selectedCard
     ? selectedCard.storeName
@@ -239,18 +359,9 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <iframe
-        ref={iframeRef}
-        srcDoc={html}
-        title="kakao-map"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          border: 'none',
-        }}
+      <div
+        ref={containerRef}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       />
 
       <SafeAreaView edges={['top']} style={styles.headerSafe} pointerEvents="box-none">
@@ -259,7 +370,7 @@ export default function MapScreen() {
             <TouchableOpacity onPress={handleBack} hitSlop={8} style={{ marginRight: 4 }}>
               <Ionicons name="chevron-back" size={22} color={PRIMARY} />
             </TouchableOpacity>
-            <Pressable style={{ flex: 1 }} onPress={handleSearchTap}>
+            <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('Home', { screen: 'SearchScreen' })}>
               <Text
                 style={[
                   styles.searchText,
@@ -279,9 +390,15 @@ export default function MapScreen() {
         </View>
       </SafeAreaView>
 
-      {(loading || !mapReady) && (
+      {(loading || !mapReady) && !sdkError && (
         <View style={styles.loadingOverlay} pointerEvents="none">
           <ActivityIndicator size="large" color={PRIMARY} />
+        </View>
+      )}
+
+      {sdkError && (
+        <View style={styles.errorOverlay}>
+          <Text style={styles.errorText}>{sdkError}</Text>
         </View>
       )}
 
@@ -318,6 +435,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: { fontSize: 13, color: '#6B7280', textAlign: 'center', lineHeight: 20 },
 
   sheet: {
     position: 'absolute',
