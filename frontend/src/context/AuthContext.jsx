@@ -12,7 +12,9 @@ export function AuthProvider({ children }) {
   const fetchUser = useCallback(async () => {
     try {
       const res = await getMyInfo();
-      setUser(res.data);
+      const localUri = await AsyncStorage.getItem('profileImageLocalUri');
+      const merged = localUri ? { ...res.data, profileImageUrl: localUri } : res.data;
+      setUser(merged);
     } catch (e) {
       setUser(null);
     }
@@ -20,6 +22,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     (async () => {
+      const resetDone = await AsyncStorage.getItem('authResetV1');
+      if (!resetDone) {
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'profileImageLocalUri']);
+        await AsyncStorage.setItem('authResetV1', '1');
+      }
       const stored = await AsyncStorage.getItem('accessToken');
       setToken(stored);
       if (stored) {
@@ -39,15 +46,38 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
-    await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+    await AsyncStorage.multiRemove([
+      'accessToken',
+      'refreshToken',
+      'profileImageLocalUri',
+    ]);
     setToken(null);
     setUser(null);
+  };
+
+  const updateLocalProfileImage = async (uri) => {
+    if (uri) {
+      await AsyncStorage.setItem('profileImageLocalUri', uri);
+    } else {
+      await AsyncStorage.removeItem('profileImageLocalUri');
+    }
+    setUser((prev) => (prev ? { ...prev, profileImageUrl: uri ?? undefined } : prev));
   };
 
   const refreshUser = fetchUser;
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, signIn, signOut, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isLoading,
+        signIn,
+        signOut,
+        refreshUser,
+        updateLocalProfileImage,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -21,7 +21,7 @@ const INITIAL = [
     id: 2,
     store: '배스킨라빈스 효창공원점',
     category: '카페',
-    photo: require('../../../assets/logo/베스킨라빈스.png'),
+    photo: require('../../../assets/logo/baskinrobbins.png'),
     benefits: [
       'T멤버십 고객님이라면, 누구나 레디팩 1+1',
       'KT 멤버십 달달 혜택, 파인트 30% OFF',

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,8 +51,8 @@ export default function AppNavigator() {
         tabBarActiveTintColor: '#7C3AED',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
-          height: 62,
-          paddingBottom: 10,
+          height: Platform.OS === 'web' ? 72 : 62,
+          paddingBottom: Platform.OS === 'web' ? 14 : 10,
           paddingTop: 6,
           backgroundColor: '#fff',
           borderTopWidth: 1,
@@ -62,7 +63,7 @@ export default function AppNavigator() {
           shadowOpacity: 0.07,
           shadowRadius: 10,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 2 },
       })}
     >
       <Tab.Screen
