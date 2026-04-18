@@ -109,7 +109,9 @@ public class MemberController {
                                             {
                                               "memberEmail": "test@example.com",
                                               "memberPw": "1234",
-                                              "memberNickname": "정환"
+                                              "memberNickname": "정환",
+                                              "memberTel": "010-1234-5678",
+                                              "memberCarrier": "SKT"
                                             }
                                             """
                             )

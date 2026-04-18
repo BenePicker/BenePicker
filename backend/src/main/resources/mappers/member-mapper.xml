@@ -12,6 +12,7 @@
         MEMBER_PW,
         MEMBER_NICKNAME,
         MEMBER_TEL,
+        MEMBER_CARRIER,
         ENROLL_DATE,
         MEMBER_DEL_FL
         FROM MEMBER
@@ -30,12 +31,14 @@
         MEMBER_NICKNAME,
         MEMBER_DEL_FL
         <if test="memberTel != null and memberTel != ''">, MEMBER_TEL</if>
+        <if test="memberCarrier != null and memberCarrier != ''">, MEMBER_CARRIER</if>
         ) VALUES (
         #{memberEmail},
         #{memberPw},
         #{memberNickname},
         'N'
         <if test="memberTel != null and memberTel != ''">, #{memberTel}</if>
+        <if test="memberCarrier != null and memberCarrier != ''">, #{memberCarrier}</if>
         )
     </insert>
 
@@ -61,6 +64,7 @@
         member_nickname AS memberNickname,
         member_name AS memberName,
         member_tel AS memberTel,
+        member_carrier AS memberCarrier,
         profile_image_url AS profileImageUrl,
         CAST(birth_date AS VARCHAR) AS birthDate,
         gender,
@@ -104,6 +108,7 @@
         UPDATE member
         SET
         member_tel = #{request.memberTel},
+        member_carrier = #{request.memberCarrier},
         birth_date = #{request.birthDate, jdbcType=DATE},
         gender = #{request.gender},
         privacy_agree_fl = #{request.privacyAgreeFl},

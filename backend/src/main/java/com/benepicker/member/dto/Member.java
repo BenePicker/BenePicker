@@ -20,6 +20,7 @@ public class Member {
     private String memberPw;
     private String memberNickname;
     private String memberTel;
+    private String memberCarrier;
     private String profileImg;
     private String memberDelFl;
     private LocalDateTime enrollDate;

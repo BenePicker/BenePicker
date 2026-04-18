@@ -24,6 +24,9 @@ public class MemberInfoResponse {
     @Schema(description = "전화번호", example = "010-1234-5678")
     private String memberTel;
 
+    @Schema(description = "통신사 (SKT, KT, LGU, MVNO)", example = "SKT")
+    private String memberCarrier;
+
     @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.png")
     private String profileImageUrl;
 

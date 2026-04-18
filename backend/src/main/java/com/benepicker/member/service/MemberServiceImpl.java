@@ -2,6 +2,7 @@ package com.benepicker.member.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.benepicker.common.util.JwtUtil;
 import com.benepicker.member.dto.request.UpdatePasswordRequest;
@@ -21,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class MemberServiceImpl implements MemberService {
+
+    private static final Set<String> ALLOWED_CARRIERS = Set.of("SKT", "KT", "LGU", "MVNO");
 
     private final MemberMapper memberMapper;
     private final PasswordEncoder passwordEncoder;
@@ -65,6 +68,18 @@ public class MemberServiceImpl implements MemberService {
 
         if (member.getMemberNickname() == null || member.getMemberNickname().isBlank()) {
             throw new IllegalArgumentException("닉네임은 필수입니다.");
+        }
+
+        if (member.getMemberTel() == null || member.getMemberTel().isBlank()) {
+            throw new IllegalArgumentException("전화번호는 필수입니다.");
+        }
+
+        if (member.getMemberCarrier() == null || member.getMemberCarrier().isBlank()) {
+            throw new IllegalArgumentException("통신사는 필수입니다.");
+        }
+
+        if (!ALLOWED_CARRIERS.contains(member.getMemberCarrier())) {
+            throw new IllegalArgumentException("지원하지 않는 통신사입니다.");
         }
 
         if (memberMapper.checkEmail(member.getMemberEmail()) > 0) {
