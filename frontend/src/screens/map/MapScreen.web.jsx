@@ -342,7 +342,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <div
         ref={containerRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}
       />
 
       <SafeAreaView edges={['top']} style={styles.headerSafe} pointerEvents="box-none">
@@ -434,6 +434,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
     boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+    zIndex: 10,
   },
   sheetImage: { width: 130, height: '100%' },
   sheetBody: { flex: 1, padding: 12, justifyContent: 'space-between' },
