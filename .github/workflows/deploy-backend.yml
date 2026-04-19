@@ -51,8 +51,8 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
           scp -i ~/.ssh/deploy_key \
-            backend/build/libs/BenePicker-0.0.1-SNAPSHOT.jar \
-            "ec2-user@$EC2_HOST:/home/ec2-user/BenePicker/backend/build/libs/BenePicker-0.0.1-SNAPSHOT.jar"
+            backend/build/libs/backend-0.0.1-SNAPSHOT.jar \
+            "ec2-user@$EC2_HOST:/home/ec2-user/BenePicker/backend/build/libs/backend-0.0.1-SNAPSHOT.jar"
 
       - name: Restart service
         env:
