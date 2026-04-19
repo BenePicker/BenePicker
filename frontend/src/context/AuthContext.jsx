@@ -15,8 +15,14 @@ export function AuthProvider({ children }) {
       const localUri = await AsyncStorage.getItem('profileImageLocalUri');
       const merged = localUri ? { ...res.data, profileImageUrl: localUri } : res.data;
       setUser(merged);
+      return true;
     } catch (e) {
+      if (e?.response?.status === 401) {
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'profileImageLocalUri']);
+        setToken(null);
+      }
       setUser(null);
+      return false;
     }
   }, []);
 
@@ -28,8 +34,8 @@ export function AuthProvider({ children }) {
         await AsyncStorage.setItem('authResetV1', '1');
       }
       const stored = await AsyncStorage.getItem('accessToken');
-      setToken(stored);
       if (stored) {
+        setToken(stored);
         await fetchUser();
       }
       setIsLoading(false);
