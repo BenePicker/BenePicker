@@ -1,0 +1,21 @@
+[Unit]
+Description=BenePicker Spring Boot Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/BenePicker/backend
+EnvironmentFile=/etc/benepicker/backend.env
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /home/ec2-user/BenePicker/backend/build/libs/BenePicker-0.0.1-SNAPSHOT.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=benepicker
+
+[Install]
+WantedBy=multi-user.target

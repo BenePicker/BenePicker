@@ -1,0 +1,62 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Install Gradle
+        run: |
+          GRADLE_VERSION=8.10.2
+          curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          sudo unzip -q /tmp/gradle.zip -d /opt
+          echo "/opt/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Build JAR
+        working-directory: backend
+        run: gradle clean bootJar --no-daemon -x test
+
+      - name: Configure SSH
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload JAR
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            backend/build/libs/BenePicker-0.0.1-SNAPSHOT.jar \
+            "ec2-user@$EC2_HOST:/home/ec2-user/BenePicker/backend/build/libs/BenePicker-0.0.1-SNAPSHOT.jar"
+
+      - name: Restart service
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "ec2-user@$EC2_HOST" \
+            'sudo systemctl restart benepicker && sleep 3 && sudo systemctl is-active benepicker'
