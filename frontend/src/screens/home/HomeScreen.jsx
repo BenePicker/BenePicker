@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -96,7 +96,7 @@ const TDAY_STORES = [
 ];
 
 // ── StoreCard ──────────────────────────────────────────────
-function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
+const StoreCard = memo(function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
   const pressScale = useRef(new Animated.Value(1)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
 
@@ -110,7 +110,7 @@ function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
       Animated.spring(heartScale, { toValue: 1.5, useNativeDriver: true, speed: 60 }),
       Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, speed: 40 }),
     ]).start();
-    onToggleLike();
+    onToggleLike(store.id);
   };
 
   return (
@@ -166,10 +166,10 @@ function StoreCard({ store, isLiked, onToggleLike, cardWidth }) {
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 // ── TDayCard ───────────────────────────────────────────────
-function TDayCard({ store }) {
+const TDayCard = memo(function TDayCard({ store }) {
   const pressScale = useRef(new Animated.Value(1)).current;
 
   return (
@@ -207,7 +207,7 @@ function TDayCard({ store }) {
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 // ── HomeScreen ─────────────────────────────────────────────
 export default function HomeScreen() {
@@ -238,21 +238,23 @@ export default function HomeScreen() {
 
   useEffect(() => {
     // 마스코트 떠다니기
-    Animated.loop(
+    const mascotYLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(mascotY,  { toValue: -10, duration: 1600, useNativeDriver: true }),
         Animated.timing(mascotY,  { toValue: 0,   duration: 1600, useNativeDriver: true }),
       ]),
-    ).start();
+    );
+    mascotYLoop.start();
 
     // 마스코트 흔들기
-    Animated.loop(
+    const mascotRotLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(mascotRot, { toValue:  1, duration: 2200, useNativeDriver: true }),
         Animated.timing(mascotRot, { toValue: -1, duration: 2200, useNativeDriver: true }),
         Animated.timing(mascotRot, { toValue:  0, duration: 2200, useNativeDriver: true }),
       ]),
-    ).start();
+    );
+    mascotRotLoop.start();
 
     // 헤더 슬라이드인
     Animated.parallel([
@@ -261,7 +263,7 @@ export default function HomeScreen() {
     ]).start();
 
     // 절약 카드 팝인
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       Animated.parallel([
         Animated.timing(cardFade,  { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.spring(cardScale, { toValue: 1, useNativeDriver: true, tension: 70, friction: 8 }),
@@ -270,26 +272,36 @@ export default function HomeScreen() {
 
     // 카운트업 + 프로그레스바
     const lid = savingsAnim.addListener(({ value }) => setDisplayAmt(Math.floor(value)));
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       Animated.timing(savingsAnim,   { toValue: SAVINGS, duration: 2000, useNativeDriver: false }).start();
       Animated.timing(progressAnim,  { toValue: 1,       duration: 1800, useNativeDriver: false }).start();
     }, 350);
 
-    setTimeout(() => {
+    const t3 = setTimeout(() => {
       Animated.parallel([
         Animated.timing(sec1Fade,  { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.timing(sec1Slide, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start();
     }, 550);
 
-    setTimeout(() => {
+    const t4 = setTimeout(() => {
       Animated.parallel([
         Animated.timing(sec2Fade,  { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.timing(sec2Slide, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start();
     }, 750);
 
-    return () => savingsAnim.removeListener(lid);
+    return () => {
+      mascotYLoop.stop();
+      mascotRotLoop.stop();
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      savingsAnim.removeListener(lid);
+      savingsAnim.stopAnimation();
+      progressAnim.stopAnimation();
+    };
   }, []);
 
   const progressWidth = progressAnim.interpolate({
@@ -302,13 +314,13 @@ export default function HomeScreen() {
     outputRange: ['-4deg', '0deg', '4deg'],
   });
 
-  const toggleLike = (id) => {
+  const toggleLike = useCallback((id) => {
     setLikedIds(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -400,7 +412,7 @@ export default function HomeScreen() {
                 key={store.id}
                 store={store}
                 isLiked={likedIds.has(store.id)}
-                onToggleLike={() => toggleLike(store.id)}
+                onToggleLike={toggleLike}
                 cardWidth={cardWidth}
               />
             ))}
